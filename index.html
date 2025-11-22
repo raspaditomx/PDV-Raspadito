@@ -212,7 +212,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+        const CLAVE_SECRETA = "AldenG1.2.3."; 
+        
+        const entrada = prompt("🔐 Sistema Protegido\nIngresa tu PIN de acceso:");
+        
+        if (entrada !== CLAVE_SECRETA) {
+            document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:red;"><h1>🚫 ACCESO DENEGADO</h1></div>';
+            throw new Error("Clave incorrecta");
+        }
         // CONFIGURACIÓN DE TUS LLAVES
         const firebaseConfig = {
             apiKey: "AIzaSyCtYiB82SKyGGbjeh8iZCzSefkC5H1_NTs",
