@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Raspadito System Cloud ☁️</title>
+    
+    <!-- LIBRERÍAS VISUALES -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- LIBRERÍAS UTILITARIAS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body { background-color: #f0f2f5; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        .navbar-custom { height: 50px; background-color: #212529; }
+        .main-container { height: calc(100vh - 50px); margin-top: 50px; }
+        .seccion-app { display: none; height: 100%; overflow-y: auto; padding-bottom: 120px; }
+        .seccion-activa { display: block; }
+        
+        /* POS */
+        .panel-productos { height: 100%; overflow-y: auto; padding: 10px; background-color: #e9ecef; }
+        .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; }
+        .btn-producto:active { transform: scale(0.95); }
+        
+        /* COBRO */
+        .panel-cobro { height: 100%; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; }
+        .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; }
+        .area-inferior { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 10px; flex-shrink: 0; }
+        .teclado-btn { height: 45px; font-size: 1.2rem; border-radius: 8px; border: 1px solid #ced4da; background-color: white; width: 100%; }
+        .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px; }
+        .btn-ajuste { width: 28px; height: 28px; padding: 0; line-height: 0; border-radius: 50%; }
+
+        /* HISTORIAL */
+        .cursor-pointer { cursor: pointer; }
+        .fila-detalle { display: none; background-color: #fff; } 
+        .fila-activa { display: table-row !important; animation: fadeIn 0.3s; }
+        .dia-header { border-left: 5px solid #0d6efd; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* LOADER */
+        #loader-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(2px); }
+    </style>
+</head>
+<body>
+
+    <!-- LOADING SPINNER -->
+    <div id="loader-overlay">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-2 fw-bold text-secondary">Conectando a la Nube...</p>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark navbar-custom px-3 fixed-top">
+        <button class="btn btn-sm btn-outline-light border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral">
+            <i class="fa-solid fa-bars fa-lg"></i> <span class="ms-2 fw-bold">MENÚ</span>
+        </button>
+        <span class="text-white fw-bold small" id="titulo-vista">Punto de Venta</span>
+        <div class="ms-auto text-success small fw-bold"><i class="fa-solid fa-cloud"></i> Online</div>
+    </nav>
+
+    <!-- MENÚ LATERAL -->
+    <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuLateral">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title">Raspadito System</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="list-group list-group-flush">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('pos')"> <i class="fa-solid fa-cash-register me-2"></i> Punto de Venta </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('productos')"> <i class="fa-solid fa-tags me-2"></i> Inventario </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('diarias')"> <i class="fa-solid fa-chart-column me-2"></i> Reporte Diario </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('generales')"> <i class="fa-solid fa-calendar-days me-2"></i> Historial General </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('exportar')"> <i class="fa-solid fa-file-excel me-2"></i> Exportar </button>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="container-fluid p-0 main-container">
+
+        <!-- === VISTA POS === -->
+        <div id="vista-pos" class="seccion-app seccion-activa">
+            <div class="row h-100 m-0">
+                <div class="col-md-8 panel-productos">
+                    <div class="row g-2" id="grid-productos-pos"></div>
+                </div>
+                <div class="col-md-4 panel-cobro shadow">
+                    <div class="bg-dark text-white px-3 py-2 d-flex justify-content-between">
+                        <span class="small"><i class="fa-solid fa-receipt"></i> Ticket</span>
+                        <span class="badge bg-light text-dark" id="items-count">0</span>
+                    </div>
+                    <div id="ticket-lista" class="ticket-lista"><div class="text-center text-muted mt-5 small">Vacío</div></div>
+                    <div class="area-inferior">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <div>
+                                <div class="small text-muted">Recibido: <span id="txt-recibido" class="fw-bold text-primary">-</span></div>
+                                <div class="small text-muted">Cambio: <span id="txt-cambio" class="fw-bold text-secondary">$0</span></div>
+                            </div>
+                            <div class="h1 fw-bold mb-0" id="txt-total">$0</div>
+                        </div>
+                        <div class="teclado-grid">
+                            <button class="teclado-btn" onclick="teclado(7)">7</button><button class="teclado-btn" onclick="teclado(8)">8</button><button class="teclado-btn" onclick="teclado(9)">9</button>
+                            <button class="teclado-btn" onclick="teclado(4)">4</button><button class="teclado-btn" onclick="teclado(5)">5</button><button class="teclado-btn" onclick="teclado(6)">6</button>
+                            <button class="teclado-btn" onclick="teclado(1)">1</button><button class="teclado-btn" onclick="teclado(2)">2</button><button class="teclado-btn" onclick="teclado(3)">3</button>
+                            <button class="teclado-btn text-danger" onclick="borrarInput()"><i class="fa-solid fa-delete-left"></i></button>
+                            <button class="teclado-btn" onclick="teclado(0)">0</button>
+                            <button class="teclado-btn btn-warning text-white" onclick="limpiarTicket()"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <button class="btn btn-success w-100 mt-2 py-2 fw-bold fs-5 shadow-sm" onclick="cobrar()">COBRAR <i class="fa-solid fa-check ms-2"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === VISTA PRODUCTOS === -->
+        <div id="vista-productos" class="seccion-app container py-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Inventario (Nube)</h4>
+                <button class="btn btn-primary btn-sm" onclick="abrirModalProducto()">+ Nuevo</button>
+            </div>
+            <div class="table-responsive bg-white shadow-sm rounded">
+                <table class="table table-hover mb-0"><tbody id="tabla-productos-body"></tbody></table>
+            </div>
+        </div>
+
+        <!-- === VISTA DIARIA === -->
+        <div id="vista-diarias" class="seccion-app container py-3">
+            <div class="row mb-3">
+                <div class="col-6">
+                    <div class="card bg-primary text-white p-3 shadow-sm h-100">
+                        <h6 class="small opacity-75">Venta Hoy</h6>
+                        <h3 class="fw-bold mb-0" id="reporte-total-hoy">$0</h3>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-white border p-3 shadow-sm h-100">
+                        <h6 class="small text-muted">Transacciones</h6>
+                        <h3 class="fw-bold mb-0" id="reporte-conteo-hoy">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white small fw-bold">Ventas por Hora (12 PM - 12 AM)</div>
+                <div class="card-body" style="position: relative; height: 250px;">
+                    <canvas id="graficoDia"></canvas>
+                </div>
+            </div>
+
+            <h5 class="mb-2">Tickets de Hoy</h5>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <tbody id="tbody-ventas-hoy"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === VISTA GENERALES === -->
+        <div id="vista-generales" class="seccion-app container py-3">
+             <div class="card p-3 mb-3 bg-light shadow-sm">
+                <label class="fw-bold small mb-2">Filtrar por Fechas:</label>
+                <div class="input-group">
+                    <input type="date" id="filtro-inicio" class="form-control">
+                    <input type="date" id="filtro-fin" class="form-control">
+                    <button class="btn btn-primary" onclick="cargarReporteGeneral()">Ver Historial</button>
+                </div>
+             </div>
+             <div id="contenedor-historial">
+                 <p class="text-muted text-center mt-4">Selecciona fechas para ver los tickets.</p>
+             </div>
+        </div>
+        
+        <!-- === VISTA EXPORTAR === -->
+        <div id="vista-exportar" class="seccion-app container py-5 text-center">
+            <i class="fa-solid fa-file-excel fa-4x text-success mb-3"></i>
+            <h3>Exportar Excel</h3>
+            <div class="card p-4 mx-auto mt-3 shadow-sm" style="max-width: 400px;">
+                <div class="mb-2 text-start"><label class="small fw-bold">Desde</label><input type="date" id="exp-inicio" class="form-control"></div>
+                <div class="mb-3 text-start"><label class="small fw-bold">Hasta</label><input type="date" id="exp-fin" class="form-control"></div>
+                <button class="btn btn-success w-100 fw-bold" onclick="descargarExcel()">DESCARGAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PRODUCTO -->
+    <div class="modal fade" id="modalProducto" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <input type="hidden" id="prod-id">
+                    <label class="small">Nombre</label><input type="text" class="form-control mb-2" id="prod-nombre">
+                    <label class="small">Precio</label><input type="number" class="form-control mb-2" id="prod-precio">
+                    <label class="small">Color</label><input type="color" class="form-control mb-2" id="prod-color" style="height:40px">
+                    <div class="d-flex mt-3">
+                        <button class="btn btn-danger btn-sm me-auto" onclick="eliminarProducto()" id="btn-del-prod">Borrar</button>
+                        <button class="btn btn-primary btn-sm" onclick="guardarProducto()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 🔥🔥 CONEXIÓN A FIREBASE (MÓDULO) 🔥🔥 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // CONFIGURACIÓN DE TUS LLAVES
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtYiB82SKyGGbjeh8iZCzSefkC5H1_NTs",
+            authDomain: "pdv-raspaditomx.firebaseapp.com",
+            projectId: "pdv-raspaditomx",
+            storageBucket: "pdv-raspaditomx.firebasestorage.app",
+            messagingSenderId: "110249134810",
+            appId: "1:110249134810:web:66f1765db51b9f3d8b73e3"
+        };
+
+        // INICIAR FIREBASE
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // VARIABLES GLOBALES ADAPTADAS
+        window.productos = [];
+        window.ventas = [];
+        window.carrito = [];
+        window.montoRecibido = "";
+        window.chartDia = null;
+        window.editId = null; // Para productos
+
+        // ESCUCHADOR EN TIEMPO REAL: PRODUCTOS
+        // Esto reemplaza a localStorage.getItem para productos
+        const qProd = query(collection(db, "productos"));
+        onSnapshot(qProd, (snapshot) => {
+            window.productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.cargarTablaProductos(); // Si estamos en vista productos
+            window.renderizarPOS(); // Si estamos en POS
+            document.getElementById('loader-overlay').style.display = 'none'; // Ocultar loader
+        });
+
+        // ESCUCHADOR EN TIEMPO REAL: VENTAS
+        // Esto reemplaza a localStorage.getItem para ventas
+        const qVentas = query(collection(db, "ventas"));
+        onSnapshot(qVentas, (snapshot) => {
+            window.ventas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Si estamos viendo reportes, actualizar al instante
+            if(document.getElementById('vista-diarias').classList.contains('seccion-activa')) {
+                window.cargarReporteDiario();
+            }
+            if(document.getElementById('vista-generales').classList.contains('seccion-activa')) {
+                window.cargarReporteGeneral();
+            }
+        });
+
+        // --- FUNCIONES DEL SISTEMA (ADAPTADAS A FIREBASE) ---
+
+        // Utilidad fecha
+        window.fechaLocalCorta = (isoString) => {
+            if(!isoString) return "";
+            const fecha = new Date(isoString);
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Utilidad Color
+        window.getContrastYIQ = (hex) => { hex=hex.replace("#",""); var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16); return (((r*299)+(g*587)+(b*114))/1000)>=128?'black':'white'; }
+
+        window.navegar = (vista) => {
+            document.querySelectorAll('.seccion-app').forEach(s => s.classList.remove('seccion-activa'));
+            document.getElementById('vista-' + vista).classList.add('seccion-activa');
+            bootstrap.Offcanvas.getInstance(document.getElementById('menuLateral')).hide();
+            
+            const titulos = { 'pos': 'Punto de Venta', 'productos': 'Inventario', 'diarias': 'Reporte Diario', 'generales': 'Historial', 'exportar': 'Descargas' };
+            document.getElementById('titulo-vista').innerText = titulos[vista];
+
+            if(vista === 'productos') window.cargarTablaProductos();
+            if(vista === 'diarias') window.cargarReporteDiario();
+        };
+
+        // --- POS ---
+        window.renderizarPOS = () => {
+            const grid = document.getElementById('grid-productos-pos'); grid.innerHTML = '';
+            window.productos.forEach(p => {
+                grid.innerHTML += `<div class="col-4 col-lg-3"><button class="btn-producto" style="background-color:${p.color};color:${window.getContrastYIQ(p.color)}" onclick="agregar('${p.id}')"><span class="small text-uppercase opacity-75">${p.nombre}</span><span class="fs-4 mb-0">$${p.precio}</span></button></div>`;
+            });
+        };
+
+        window.agregar = (id) => {
+            const p = window.productos.find(x => x.id === id);
+            const i = window.carrito.find(x => x.id === id);
+            if(i) i.cantidad++; else window.carrito.push({...p, cantidad:1});
+            window.actualizarTicket();
+        };
+
+        window.modCant = (idx, n) => {
+            window.carrito[idx].cantidad += n;
+            if(window.carrito[idx].cantidad <= 0) window.carrito.splice(idx, 1);
+            window.actualizarTicket();
+        };
+
+        window.limpiarTicket = () => {
+            if(window.carrito.length > 0 && confirm('¿Borrar todo?')) { window.carrito=[]; window.montoRecibido=""; window.actualizarTicket(); }
+            else { window.montoRecibido=""; window.actualizarTicket(); }
+        };
+
+        window.actualizarTicket = () => {
+            const lista = document.getElementById('ticket-lista'); lista.innerHTML = '';
+            let total = 0, count = 0;
+            window.carrito.forEach((item, idx) => {
+                total += item.precio*item.cantidad; count+=item.cantidad;
+                lista.innerHTML += `<div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2" style="font-size:0.9rem"><div style="width:40%"><div class="fw-bold text-truncate">${item.nombre}</div><small class="text-muted">$${item.precio}</small></div><div class="bg-light rounded border"><button class="btn btn-sm btn-ajuste text-danger fw-bold" onclick="modCant(${idx},-1)">-</button><span class="mx-2 fw-bold">${item.cantidad}</span><button class="btn btn-sm btn-ajuste text-success fw-bold" onclick="modCant(${idx},1)">+</button></div><div class="fw-bold text-end" style="width:20%">$${item.precio*item.cantidad}</div></div>`;
+            });
+            document.getElementById('items-count').innerText = count;
+            document.getElementById('txt-total').innerText = '$'+total;
+            const rec = parseInt(window.montoRecibido||0);
+            document.getElementById('txt-recibido').innerText = window.montoRecibido ? '$'+rec : '-';
+            const lbl = document.getElementById('txt-cambio');
+            if(!window.montoRecibido){ lbl.innerText="$0"; lbl.className="fw-bold text-secondary"; }
+            else if(rec<total){ lbl.innerText="FALTA $"+(total-rec); lbl.className="fw-bold text-danger bg-warning px-2 rounded"; }
+            else { lbl.innerText="$"+(rec-total); lbl.className="fw-bold text-success"; }
+        };
+
+        window.teclado = (n) => { window.montoRecibido+=n; window.actualizarTicket(); };
+        window.borrarInput = () => { window.montoRecibido=""; window.actualizarTicket(); };
+
+        // --- COBRAR (FIREBASE WRITE) ---
+        window.cobrar = async () => {
+            const total = window.carrito.reduce((s,i)=>s+(i.precio*i.cantidad),0);
+            if(total===0) return;
+            let pago = parseInt(window.montoRecibido||total);
+            if(window.montoRecibido && pago<total) return alert("Pago insuficiente");
+            
+            try {
+                // GUARDAR EN FIREBASE
+                await addDoc(collection(db, "ventas"), {
+                    fecha: new Date().toISOString(),
+                    items: window.carrito,
+                    total: total,
+                    pago: pago
+                });
+                
+                window.carrito=[]; window.montoRecibido=""; window.actualizarTicket();
+                // Feedback visual
+                const btn = document.querySelector('.btn-success');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> GUARDADO';
+                setTimeout(() => btn.innerHTML = original, 1500);
+
+            } catch (e) {
+                alert("Error al guardar en la nube: " + e.message);
+            }
+        };
+
+        // --- CRUD PRODUCTOS (FIREBASE) ---
+        window.cargarTablaProductos = () => {
+            const b = document.getElementById('tabla-productos-body'); b.innerHTML='';
+            window.productos.forEach(p => {
+                b.innerHTML+=`<tr><td><div style="width:25px;height:25px;background:${p.color};border-radius:50%"></div></td><td>${p.nombre}</td><td>$${p.precio}</td><td class="text-end"><button class="btn btn-sm btn-light border" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button></td></tr>`;
+            });
+        };
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalProducto'));
+        window.abrirModalProducto = () => { window.editId=null; document.getElementById('prod-nombre').value=''; document.getElementById('prod-precio').value=''; document.getElementById('prod-color').value='#2ecc71'; document.getElementById('btn-del-prod').style.display='none'; modal.show(); };
+        
+        window.editarProd = (id) => {
+            const p = window.productos.find(x => x.id === id);
+            window.editId = id;
+            document.getElementById('prod-nombre').value=p.nombre; document.getElementById('prod-precio').value=p.precio; document.getElementById('prod-color').value=p.color; document.getElementById('btn-del-prod').style.display='block'; modal.show();
+        };
+
+        window.guardarProducto = async () => {
+            const n = document.getElementById('prod-nombre').value;
+            const pr = parseFloat(document.getElementById('prod-precio').value);
+            const c = document.getElementById('prod-color').value;
+            if(!n || !pr) return;
+
+            try {
+                if(window.editId) {
+                    // ACTUALIZAR EXISTENTE
+                    await updateDoc(doc(db, "productos", window.editId), { nombre:n, precio:pr, color:c });
+                } else {
+                    // CREAR NUEVO
+                    await addDoc(collection(db, "productos"), { nombre:n, precio:pr, color:c });
+                }
+                modal.hide();
+            } catch (e) { alert("Error al guardar: " + e.message); }
+        };
+
+        window.eliminarProducto = async () => {
+            if(confirm('¿Eliminar?')) {
+                try {
+                    await deleteDoc(doc(db, "productos", window.editId));
+                    modal.hide();
+                } catch (e) { alert("Error: " + e.message); }
+            }
+        };
+
+        // --- HISTORIAL Y EDICIÓN (FIREBASE) ---
+        
+        // Eliminar Ticket Completo
+        window.eliminarTicket = async (idVenta) => {
+            if(!confirm("¿Eliminar este ticket de la nube?")) return;
+            try {
+                await deleteDoc(doc(db, "ventas", idVenta));
+                // La UI se actualiza sola gracias a onSnapshot
+            } catch (e) { alert("Error: " + e.message); }
+        };
+
+        // Modificar Ticket (Devoluciones/Ajustes)
+        window.modificarVentaPasada = async (idVenta, idxItem, cambio) => {
+            const venta = window.ventas.find(v => v.id === idVenta);
+            if(!venta) return;
+            
+            // Clona los items para no mutar el estado local directamente
+            const nuevosItems = [...venta.items];
+            const item = nuevosItems[idxItem];
+            
+            item.cantidad += cambio;
+
+            if(item.cantidad <= 0) {
+                nuevosItems.splice(idxItem, 1);
+            }
+
+            try {
+                if(nuevosItems.length === 0) {
+                    // Si no quedan items, borramos el doc
+                    await deleteDoc(doc(db, "ventas", idVenta));
+                } else {
+                    // Si quedan, actualizamos items y total
+                    const nuevoTotal = nuevosItems.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
+                    await updateDoc(doc(db, "ventas", idVenta), {
+                        items: nuevosItems,
+                        total: nuevoTotal
+                    });
+                }
+            } catch (e) { alert("Error al actualizar: " + e.message); }
+        };
+
+        // --- REPORTES ---
+        window.cargarReporteDiario = () => {
+            const hoyStr = window.fechaLocalCorta(new Date().toISOString());
+            const ventasHoy = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === hoyStr);
+
+            const total = ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0);
+            document.getElementById('reporte-total-hoy').innerText = '$' + total;
+            document.getElementById('reporte-conteo-hoy').innerText = ventasHoy.length;
+            document.getElementById('tbody-ventas-hoy').innerHTML = generarHTMLTickets(ventasHoy, 'dia');
+            generarGraficaHoras(ventasHoy);
+        };
+
+        window.cargarReporteGeneral = () => {
+            const ini = document.getElementById('filtro-inicio').value;
+            const fin = document.getElementById('filtro-fin').value;
+            const div = document.getElementById('contenedor-historial');
+            if(!ini || !fin) return;
+
+            const filtradas = window.ventas.filter(v => {
+                const f = window.fechaLocalCorta(v.fecha);
+                return f >= ini && f <= fin;
+            });
+
+            if(filtradas.length === 0) {
+                div.innerHTML = '<div class="alert alert-light text-center border">No hay ventas en este rango.</div>';
+                return;
+            }
+
+            const grupos = {};
+            filtradas.forEach(v => {
+                const dia = window.fechaLocalCorta(v.fecha);
+                if(!grupos[dia]) grupos[dia] = [];
+                grupos[dia].push(v);
+            });
+
+            let html = '<div class="accordion">';
+            Object.keys(grupos).sort().reverse().forEach(dia => {
+                const lista = grupos[dia];
+                const totalDia = lista.reduce((s, v) => s + (v.total || 0), 0);
+                const fechaTexto = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'});
+                const idCollapse = 'collapse-' + dia;
+
+                html += '<div class="card mb-2 border-0 shadow-sm">';
+                html += `<div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')">`;
+                html += `<div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div>`;
+                html += `<h5 class="mb-0 fw-bold text-success">$${totalDia}</h5></div>`;
+                html += `<div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">`;
+                html += generarHTMLTickets(lista, 'gen-' + dia);
+                html += `</tbody></table></div></div></div>`;
+            });
+            html += '</div>';
+            div.innerHTML = html;
+        };
+
+        // Funciones auxiliares de HTML (Idénticas a la v8 pero usan ID string)
+        function generarHTMLTickets(listaVentas, prefijoId) {
+            if(!listaVentas || listaVentas.length === 0) return '<tr><td colspan="3" class="text-center text-muted p-3">Sin ventas</td></tr>';
+            let html = '';
+            // Ordenar por fecha (Firestore puede traerlas desordenadas a veces, aunque query ayuda)
+            const listaOrdenada = listaVentas.sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).reverse();
+
+            listaOrdenada.forEach(v => {
+                const fechaObj = new Date(v.fecha);
+                const hora = fechaObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const idFila = prefijoId + '-' + v.id;
+                const itemsSafe = v.items || [];
+                const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>';
+                
+                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')">`;
+                html += `<td class="fw-bold text-secondary" style="width:20%">${hora}</td>`;
+                html += `<td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td>`;
+                html += `<td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span>`;
+                html += `<button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+
+                html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`;
+                
+                if(itemsSafe.length > 0) {
+                    html += '<ul class="list-group">';
+                    itemsSafe.forEach((item, idxItem) => {
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span>`;
+                        html += `<div><button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button><span class="fw-bold">${(item.cantidad||0)}</span><button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button></div></li>`;
+                    });
+                    html += '</ul>';
+                }
+                html += '</div></td></tr>';
+            });
+            return html;
+        }
+
+        function generarGraficaHoras(datos) {
+            const ctx = document.getElementById('graficoDia');
+            const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"];
+            const data = Array(12).fill(0);
+            datos.forEach(v => {
+                const h = new Date(v.fecha).getHours();
+                if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
+            });
+            if(window.chartDia) window.chartDia.destroy();
+            window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+        }
+
+        // GLOBAL EXPOSURE (Para que el HTML pueda llamar a las funciones del módulo)
+        window.toggleDetalle = (id) => { const el = document.getElementById(id); if(el) { el.classList.toggle('fila-activa'); } };
+        window.toggleCollapse = (id) => { const el = document.getElementById(id); if(el) { el.classList.toggle('show'); } };
+        
+        window.descargarExcel = () => {
+            const ini = document.getElementById('exp-inicio').value; const fin = document.getElementById('exp-fin').value;
+            if(!ini || !fin) return alert("Selecciona fechas");
+            const rep = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f>=ini && f<=fin; });
+            if(rep.length===0) return alert("Sin datos");
+            const filas = [];
+            rep.forEach(v => { 
+                const itemsSafe = v.items || [];
+                const fechaLocal = new Date(v.fecha).toLocaleDateString();
+                const horaLocal = new Date(v.fecha).toLocaleTimeString();
+                if(itemsSafe.length === 0) filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 });
+                else itemsSafe.forEach(i => filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad })); 
+            });
+            const ws = XLSX.utils.json_to_sheet(filas); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+            XLSX.writeFile(wb, `Ventas_${ini}_${fin}.xlsx`);
+        };
+
+        // Inicializar fecha
+        const hoy = window.fechaLocalCorta(new Date().toISOString());
+        document.querySelectorAll('input[type="date"]').forEach(i => i.value = hoy);
+
+    </script>
+</body>
+</html>
