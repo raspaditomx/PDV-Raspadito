@@ -3,50 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raspadito System v11</title>
+    <title>Raspadito System v18 (Clean Code)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <style>
+        /* ESTILOS GLOBALES */
+        * { -webkit-user-select: none; -moz-user-select: none; user-select: none; touch-action: manipulation; }
+        input, textarea { user-select: text !important; -webkit-user-select: text !important; }
         body { background-color: #f0f2f5; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        .navbar-custom { height: 50px; background-color: #212529; }
-        .main-container { height: calc(100vh - 50px); margin-top: 50px; }
-        .seccion-app { display: none; height: 100%; overflow-y: auto; padding-bottom: 120px; }
+        
+        .navbar-custom { height: 50px; background-color: #212529; flex-shrink: 0; }
+        
+        /* CONTENEDOR PRINCIPAL */
+        .main-container { height: calc(100vh - 50px); margin-top: 50px; display: flex; flex-direction: column; overflow: hidden; }
+        .seccion-app { display: none; width: 100%; height: 100%; overflow-y: auto; padding-bottom: 150px; }
         .seccion-activa { display: block; }
 
-        /* POS */
-        .panel-productos { height: 100%; overflow-y: auto; padding: 10px; background-color: #e9ecef; }
+        /* LAYOUT POS */
+        #vista-pos { display: none; flex-direction: column; height: 100%; }
+        #vista-pos.seccion-activa { display: flex; }
+        .pos-split-container { display: flex; flex-grow: 1; overflow: hidden; }
+
+        .panel-productos { flex-grow: 1; overflow-y: auto; padding: 10px; background-color: #e9ecef; min-width: 200px; }
+        
+        /* RESIZERS */
+        .resizer-h { width: 12px; background-color: #e0e0e0; cursor: col-resize; display: flex; justify-content: center; align-items: center; border-left: 1px solid #ccc; border-right: 1px solid #ccc; z-index: 10; }
+        .resizer-h::after { content: ""; display: block; width: 4px; height: 20px; border-left: 1px solid #999; border-right: 1px solid #999; }
+        
+        .panel-ticket { width: 350px; min-width: 250px; background: white; display: flex; flex-direction: column; height: 100%; }
+        
+        .resizer-v { height: 12px; background-color: #e0e0e0; cursor: row-resize; display: flex; justify-content: center; align-items: center; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; flex-shrink: 0; }
+        .resizer-v::after { content: ""; display: block; width: 20px; height: 4px; border-top: 1px solid #999; border-bottom: 1px solid #999; }
+        .resizer-locked { cursor: default !important; opacity: 0.5; pointer-events: none; }
+
+        /* ELEMENTOS */
+        .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; }
+        .area-totales { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 15px; flex-shrink: 0; }
         .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; }
         .btn-producto:active { transform: scale(0.95); }
-        
-        /* COBRO */
-        .panel-cobro { height: 100%; background: white; border-left: 1px solid #ccc; display: flex; flex-direction: column; }
-        .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; }
-        .area-inferior { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 10px; flex-shrink: 0; }
-        
-        /* TECLADO CONFIGURABLE */
-        .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px; }
-        .teclado-btn { 
-            height: 50px; /* Altura base, se sobreescribe con JS */
-            font-size: 1.3rem; border-radius: 8px; border: 1px solid #ced4da; background-color: white; width: 100%; 
-        }
-        .btn-ajuste { width: 28px; height: 28px; padding: 0; line-height: 0; border-radius: 50%; }
 
-        /* AJUSTES VISUALES */
+        /* TECLADO FLOTANTE */
+        #floating-keypad { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 480px; background: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; z-index: 9999; backdrop-filter: blur(5px); min-width: 200px; min-height: 40px; transition: height 0.3s ease, width 0.3s ease; container-type: size; }
+        #floating-keypad.minimized { height: 40px !important; width: 200px !important; overflow: hidden; resize: none; }
+        #floating-keypad.minimized #keypad-body, #floating-keypad.minimized #resize-handle { display: none; }
+        #keypad-header { height: 40px; background: #212529; color: white; border-radius: 15px 15px 0 0; cursor: move; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: bold; font-size: 0.9rem; }
+        #floating-keypad.minimized #keypad-header { border-radius: 15px; }
+        #keypad-body { flex-grow: 1; padding: 2cqh; display: flex; flex-direction: column; gap: 1cqh; }
+        
+        .screen-keypad { text-align: right; background: #f8f9fa; padding: 2cqh; border-radius: 8px; border: 1px solid #dee2e6; display: flex; flex-direction: column; justify-content: center; height: 20%; }
+        .screen-input { font-size: 8cqh; font-weight: bold; color: #212529; line-height: 1; }
+        .screen-info { font-size: 3.5cqh; color: #6c757d; display: flex; justify-content: space-between; margin-top: 1cqh; }
+        .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1cqh; flex-grow: 1; }
+        .teclado-btn { width: 100%; height: 100%; font-size: 5cqh; font-weight: bold; border-radius: 8px; border: 1px solid #ced4da; background-color: white; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .teclado-btn:active { background-color: #e2e6ea; }
+        #btn-cobrar-key { font-size: 5cqh; height: 15%; }
+        #resize-handle { width: 25px; height: 25px; background: linear-gradient(135deg, transparent 50%, #0d6efd 50%); position: absolute; bottom: 0; right: 0; cursor: nwse-resize; border-radius: 0 0 15px 0; z-index: 10; }
+
+        .handle-drag { cursor: grab; color: #6c757d; padding: 10px; font-size: 1.2rem; }
         .cursor-pointer { cursor: pointer; }
         .fila-detalle { display: none; background-color: #fff; } 
         .fila-activa { display: table-row !important; animation: fadeIn 0.3s; }
-        .dia-header { border-left: 5px solid #0d6efd; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* LOADER */
-        #loader-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(2px); }
-        
-        /* CONTROL DESLIZANTE OCULTO */
-        #slider-container { display: none; background: #333; padding: 10px; border-radius: 0 0 10px 10px; margin-bottom: 10px; color: white; }
+        #loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
     </style>
 </head>
 <body>
@@ -63,157 +86,118 @@
             <i class="fa-solid fa-bars fa-lg"></i> <span class="ms-2 fw-bold">MENÚ</span>
         </button>
         <span class="text-white fw-bold small" id="titulo-vista">Punto de Venta</span>
-        <div class="ms-auto text-success small fw-bold"><i class="fa-solid fa-cloud"></i> Online</div>
+        <div class="ms-auto d-flex">
+            <button class="btn btn-sm btn-outline-warning me-2" id="btn-lock-layout" onclick="toggleLayoutLock()" title="Fijar Diseño"><i class="fa-solid fa-lock-open"></i></button>
+            <button class="btn btn-sm btn-outline-success" onclick="resetLayout()" title="Resetear Diseño"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
     </nav>
 
     <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuLateral">
-        <div class="offcanvas-header border-bottom border-secondary">
-            <h5 class="offcanvas-title">Raspadito System</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-        </div>
+        <div class="offcanvas-header border-bottom border-secondary"><h5 class="offcanvas-title">Raspadito System</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button></div>
         <div class="list-group list-group-flush">
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('pos')"> <i class="fa-solid fa-cash-register me-2"></i> Punto de Venta </button>
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('productos')"> <i class="fa-solid fa-tags me-2"></i> Inventario </button>
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('diarias')"> <i class="fa-solid fa-chart-column me-2"></i> Reporte Diario </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('especificas')"> <i class="fa-solid fa-calendar-day me-2"></i> Ventas Específicas </button>
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('generales')"> <i class="fa-solid fa-calendar-days me-2"></i> Historial General </button>
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('exportar')"> <i class="fa-solid fa-file-excel me-2"></i> Exportar </button>
         </div>
     </div>
 
-    <div class="container-fluid p-0 main-container">
+    <div id="floating-keypad">
+        <div id="keypad-header">
+            <span class="d-flex align-items-center"><i class="fa-solid fa-grip-vertical me-2 opacity-50"></i> Teclado</span>
+            <button class="btn btn-sm btn-light py-0 px-2 fw-bold" onclick="toggleMinimize()" id="btn-min-max"><i class="fa-solid fa-minus"></i></button>
+        </div>
+        <div id="keypad-body">
+            <div class="screen-keypad">
+                <div class="text-muted small text-start" style="font-size:2.5cqh">Recibido:</div>
+                <div class="screen-input text-primary" id="keypad-input">-</div>
+                <div class="screen-info border-top pt-1" style="border-color:#ddd!important">
+                    <span id="keypad-total-info">Total: $0</span>
+                    <span class="fw-bold" id="keypad-cambio-info">Cambio: $0</span>
+                </div>
+            </div>
+            <div class="teclado-grid">
+                <button class="teclado-btn" onclick="teclado(7)">7</button><button class="teclado-btn" onclick="teclado(8)">8</button><button class="teclado-btn" onclick="teclado(9)">9</button>
+                <button class="teclado-btn" onclick="teclado(4)">4</button><button class="teclado-btn" onclick="teclado(5)">5</button><button class="teclado-btn" onclick="teclado(6)">6</button>
+                <button class="teclado-btn" onclick="teclado(1)">1</button><button class="teclado-btn" onclick="teclado(2)">2</button><button class="teclado-btn" onclick="teclado(3)">3</button>
+                <button class="teclado-btn text-danger" onclick="borrarInput()"><i class="fa-solid fa-delete-left"></i></button>
+                <button class="teclado-btn" onclick="teclado(0)">0</button>
+                <button class="teclado-btn btn-warning text-white" onclick="limpiarTicket()"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <button id="btn-cobrar-key" class="btn btn-success w-100 fw-bold shadow-sm" onclick="cobrar()">COBRAR</button>
+        </div>
+        <div id="resize-handle"></div>
+    </div>
+
+    <div class="container-fluid p-0 main-container" id="main-container">
 
         <div id="vista-pos" class="seccion-app seccion-activa">
-            <div class="row h-100 m-0">
-                <div class="col-md-8 panel-productos">
-                    <div class="row g-2" id="grid-productos-pos"></div>
-                </div>
-                <div class="col-md-4 panel-cobro shadow">
-                    <div class="bg-dark text-white px-3 py-2 d-flex justify-content-between align-items-center">
-                        <span class="small"><i class="fa-solid fa-receipt"></i> Ticket</span>
-                        <div>
-                            <button class="btn btn-sm btn-dark border-secondary me-2" onclick="toggleSlider()" title="Ajustar Teclado"><i class="fa-solid fa-gear"></i></button>
-                            <span class="badge bg-light text-dark" id="items-count">0</span>
-                        </div>
-                    </div>
-                    
-                    <div id="slider-container">
-                        <label class="small fw-bold mb-1">Tamaño del Teclado:</label>
-                        <input type="range" class="form-range" min="40" max="100" step="5" id="teclado-slider" oninput="ajustarTeclado(this.value)">
-                    </div>
-
+            <div class="pos-split-container">
+                <div class="panel-productos" id="panel-productos"><div class="row g-2" id="grid-productos-pos"></div></div>
+                <div class="resizer-h" id="resizer-h"></div>
+                <div class="panel-ticket shadow" id="panel-ticket">
+                    <div class="bg-secondary text-white px-3 py-2 d-flex justify-content-between"><span>Ticket</span> <span class="badge bg-light text-dark" id="items-count">0</span></div>
                     <div id="ticket-lista" class="ticket-lista"><div class="text-center text-muted mt-5 small">Vacío</div></div>
-                    <div class="area-inferior">
-                        <div class="d-flex justify-content-between align-items-end mb-2">
-                            <div>
-                                <div class="small text-muted">Recibido: <span id="txt-recibido" class="fw-bold text-primary">-</span></div>
-                                <div class="small text-muted">Cambio: <span id="txt-cambio" class="fw-bold text-secondary">$0</span></div>
-                            </div>
-                            <div class="h1 fw-bold mb-0" id="txt-total">$0</div>
-                        </div>
-                        <div class="teclado-grid">
-                            <button class="teclado-btn" onclick="teclado(7)">7</button><button class="teclado-btn" onclick="teclado(8)">8</button><button class="teclado-btn" onclick="teclado(9)">9</button>
-                            <button class="teclado-btn" onclick="teclado(4)">4</button><button class="teclado-btn" onclick="teclado(5)">5</button><button class="teclado-btn" onclick="teclado(6)">6</button>
-                            <button class="teclado-btn" onclick="teclado(1)">1</button><button class="teclado-btn" onclick="teclado(2)">2</button><button class="teclado-btn" onclick="teclado(3)">3</button>
-                            <button class="teclado-btn text-danger" onclick="borrarInput()"><i class="fa-solid fa-delete-left"></i></button>
-                            <button class="teclado-btn" onclick="teclado(0)">0</button>
-                            <button class="teclado-btn btn-warning text-white" onclick="limpiarTicket()"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                        <button class="btn btn-success w-100 mt-2 py-2 fw-bold fs-5 shadow-sm" onclick="cobrar()">COBRAR <i class="fa-solid fa-check ms-2"></i></button>
+                    <div class="area-totales">
+                        <div class="d-flex justify-content-between h3 fw-bold"><span>Total:</span> <span id="txt-total">$0</span></div>
+                        <div class="d-flex justify-content-between small text-muted"><span id="txt-recibido-main">Recibido: -</span><span id="txt-cambio-main">Cambio: $0</span></div>
                     </div>
                 </div>
             </div>
+            <div class="resizer-v" id="resizer-v"></div>
         </div>
 
         <div id="vista-productos" class="seccion-app container py-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Inventario (Nube)</h4>
+                <h4>Inventario <small class="text-muted fs-6">(Arrastra para ordenar)</small></h4>
                 <button class="btn btn-primary btn-sm" onclick="abrirModalProducto()">+ Nuevo</button>
             </div>
             <div class="table-responsive bg-white shadow-sm rounded">
-                <table class="table table-hover mb-0"><tbody id="tabla-productos-body"></tbody></table>
+                <table class="table table-hover mb-0 align-middle"><tbody id="tabla-productos-body"></tbody></table>
             </div>
         </div>
 
         <div id="vista-diarias" class="seccion-app container py-3">
             <div class="row mb-3">
-                <div class="col-6">
-                    <div class="card bg-primary text-white p-3 shadow-sm h-100">
-                        <h6 class="small opacity-75">Venta Hoy</h6>
-                        <h3 class="fw-bold mb-0" id="reporte-total-hoy">$0</h3>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card bg-white border p-3 shadow-sm h-100">
-                        <h6 class="small text-muted">Transacciones</h6>
-                        <h3 class="fw-bold mb-0" id="reporte-conteo-hoy">0</h3>
-                    </div>
-                </div>
+                <div class="col-6"><div class="card bg-primary text-white p-3 shadow-sm h-100"><h6 class="small opacity-75">Venta Hoy</h6><h3 class="fw-bold mb-0" id="reporte-total-hoy">$0</h3></div></div>
+                <div class="col-6"><div class="card bg-white border p-3 shadow-sm h-100"><h6 class="small text-muted">Transacciones</h6><h3 class="fw-bold mb-0" id="reporte-conteo-hoy">0</h3></div></div>
             </div>
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white small fw-bold">Ventas por Hora</div>
-                <div class="card-body" style="position: relative; height: 250px;">
-                    <canvas id="graficoDia"></canvas>
-                </div>
+            <div class="card shadow-sm mb-4"><div class="card-header bg-white small fw-bold">Ventas por Hora (Hoy)</div><div class="card-body" style="height:250px"><canvas id="graficoDia"></canvas></div></div>
+            <h5 class="mb-2">Tickets de Hoy</h5><div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><tbody id="tbody-ventas-hoy"></tbody></table></div></div></div>
+        </div>
+
+        <div id="vista-especificas" class="seccion-app container py-3">
+            <div class="card p-3 mb-4 bg-light shadow-sm border-0">
+                <label class="fw-bold small mb-2">Seleccionar Día:</label>
+                <div class="input-group"><input type="date" id="filtro-dia-especifico" class="form-control"><button class="btn btn-primary fw-bold" onclick="cargarVentasEspecificas()">VER REPORTE</button></div>
             </div>
-            <h5 class="mb-2">Tickets de Hoy</h5>
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody id="tbody-ventas-hoy"></tbody>
-                        </table>
-                    </div>
-                </div>
+            <div id="contenido-especifico" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0 fw-bold" id="titulo-dia-esp">Resumen</h4><span class="badge bg-success fs-5" id="total-dia-esp">$0</span></div>
+                <div class="card shadow-sm mb-4"><div class="card-header bg-white small fw-bold">Actividad por Hora</div><div class="card-body" style="height:250px;"><canvas id="graficoEspecifico"></canvas></div></div>
+                <h5 class="mb-2">Ranking de Productos</h5><div class="card shadow-sm mb-4"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Producto</th><th class="text-center">Cant</th><th class="text-end">Total</th></tr></thead><tbody id="tabla-productos-esp"></tbody></table></div></div>
             </div>
         </div>
 
         <div id="vista-generales" class="seccion-app container py-3">
-             <div class="card p-3 mb-3 bg-light shadow-sm">
-                <label class="fw-bold small mb-2">Filtrar Fechas:</label>
-                <div class="input-group">
-                    <input type="date" id="filtro-inicio" class="form-control">
-                    <input type="date" id="filtro-fin" class="form-control">
-                    <button class="btn btn-primary" onclick="cargarReporteGeneral()">Ver Historial</button>
-                </div>
-             </div>
-             <div id="contenedor-historial">
-                 <p class="text-muted text-center mt-4">Selecciona fechas para ver los tickets.</p>
-             </div>
+             <div class="card p-3 mb-3 bg-light shadow-sm"><label class="fw-bold small mb-2">Filtrar Fechas:</label><div class="input-group"><input type="date" id="filtro-inicio" class="form-control"><input type="date" id="filtro-fin" class="form-control"><button class="btn btn-primary" onclick="cargarReporteGeneral()">Ver</button></div></div>
+             <div id="contenedor-historial"><p class="text-muted text-center mt-4">Selecciona fechas.</p></div>
         </div>
         
         <div id="vista-exportar" class="seccion-app container py-5 text-center">
-            <i class="fa-solid fa-file-excel fa-4x text-success mb-3"></i>
-            <h3>Exportar Excel</h3>
-            <div class="card p-4 mx-auto mt-3 shadow-sm" style="max-width: 400px;">
-                <div class="mb-2 text-start"><label class="small fw-bold">Desde</label><input type="date" id="exp-inicio" class="form-control"></div>
-                <div class="mb-3 text-start"><label class="small fw-bold">Hasta</label><input type="date" id="exp-fin" class="form-control"></div>
-                <button class="btn btn-success w-100 fw-bold" onclick="descargarExcel()">DESCARGAR</button>
-            </div>
+            <i class="fa-solid fa-file-excel fa-4x text-success mb-3"></i><h3>Exportar Excel</h3>
+            <div class="card p-4 mx-auto mt-3 shadow-sm" style="max-width:400px"><div class="mb-2 text-start"><label class="small fw-bold">Desde</label><input type="date" id="exp-inicio" class="form-control"></div><div class="mb-3 text-start"><label class="small fw-bold">Hasta</label><input type="date" id="exp-fin" class="form-control"></div><button class="btn btn-success w-100 fw-bold" onclick="descargarExcel()">DESCARGAR</button></div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalProducto" tabindex="-1">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-body">
-                    <input type="hidden" id="prod-id">
-                    <label class="small">Nombre</label><input type="text" class="form-control mb-2" id="prod-nombre">
-                    <label class="small">Precio</label><input type="number" class="form-control mb-2" id="prod-precio">
-                    <label class="small">Color</label><input type="color" class="form-control mb-2" id="prod-color" style="height:40px">
-                    <div class="d-flex mt-3">
-                        <button class="btn btn-danger btn-sm me-auto" onclick="eliminarProducto()" id="btn-del-prod">Borrar</button>
-                        <button class="btn btn-primary btn-sm" onclick="guardarProducto()">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="modal fade" id="modalProducto" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-body"><input type="hidden" id="prod-id"><label class="small">Nombre</label><input type="text" class="form-control mb-2" id="prod-nombre"><label class="small">Precio</label><input type="number" class="form-control mb-2" id="prod-precio"><label class="small">Color</label><input type="color" class="form-control mb-2" id="prod-color" style="height:40px"><div class="d-flex mt-3"><button class="btn btn-danger btn-sm me-auto" onclick="eliminarProducto()" id="btn-del-prod">Borrar</button><button class="btn btn-primary btn-sm" onclick="guardarProducto()">Guardar</button></div></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, writeBatch, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtYiB82SKyGGbjeh8iZCzSefkC5H1_NTs",
@@ -227,20 +211,23 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // ESTADO GLOBAL
         window.productos = [];
         window.ventas = [];
         window.carrito = [];
         window.montoRecibido = "";
         window.chartDia = null;
+        window.chartEsp = null;
         window.editId = null;
+        window.isLayoutLocked = false;
 
-        // REALTIME LISTENERS
-        const qProd = query(collection(db, "productos"));
+        // LISTENERS
+        const qProd = query(collection(db, "productos"), orderBy("orden", "asc"));
         onSnapshot(qProd, (snapshot) => {
             window.productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            window.cargarTablaProductos(); 
-            window.renderizarPOS(); 
-            document.getElementById('loader-overlay').style.display = 'none'; 
+            window.cargarTablaProductos();
+            window.renderizarPOS();
+            document.getElementById('loader-overlay').style.display = 'none';
         });
 
         const qVentas = query(collection(db, "ventas"));
@@ -248,9 +235,10 @@
             window.ventas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if(document.getElementById('vista-diarias').classList.contains('seccion-activa')) window.cargarReporteDiario();
             if(document.getElementById('vista-generales').classList.contains('seccion-activa')) window.cargarReporteGeneral();
+            if(document.getElementById('vista-especificas').classList.contains('seccion-activa')) window.cargarVentasEspecificas();
         });
 
-        // UTILIDADES Y CONFIG
+        // UTILIDADES
         window.fechaLocalCorta = (isoString) => {
             if(!isoString) return "";
             const fecha = new Date(isoString);
@@ -259,107 +247,407 @@
             const day = String(fecha.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         };
-        window.getContrastYIQ = (hex) => { hex=hex.replace("#",""); var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16); return (((r*299)+(g*587)+(b*114))/1000)>=128?'black':'white'; }
 
-        // CONTROL DEL TECLADO MANUAL
-        window.toggleSlider = () => {
-            const s = document.getElementById('slider-container');
-            s.style.display = (s.style.display === 'block') ? 'none' : 'block';
+        window.getContrastYIQ = (hex) => {
+            hex = hex.replace("#", "");
+            var r = parseInt(hex.substr(0,2),16);
+            var g = parseInt(hex.substr(2,2),16);
+            var b = parseInt(hex.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
         };
-        window.ajustarTeclado = (val) => {
-            const btns = document.querySelectorAll('.teclado-btn');
-            btns.forEach(b => b.style.height = val + 'px');
-            localStorage.setItem('alturaTeclado', val);
-        };
-        // Cargar preferencia al inicio
-        const alturaGuardada = localStorage.getItem('alturaTeclado') || 50;
-        window.ajustarTeclado(alturaGuardada);
-        document.getElementById('teclado-slider').value = alturaGuardada;
-
 
         window.navegar = (vista) => {
             document.querySelectorAll('.seccion-app').forEach(s => s.classList.remove('seccion-activa'));
             document.getElementById('vista-' + vista).classList.add('seccion-activa');
             bootstrap.Offcanvas.getInstance(document.getElementById('menuLateral')).hide();
-            const titulos = { 'pos': 'Punto de Venta', 'productos': 'Inventario', 'diarias': 'Reporte Diario', 'generales': 'Historial', 'exportar': 'Descargas' };
+            
+            const titulos = { 
+                'pos': 'Punto de Venta', 
+                'productos': 'Inventario', 
+                'diarias': 'Reporte Diario',
+                'especificas': 'Ventas Específicas', 
+                'generales': 'Historial', 
+                'exportar': 'Descargas' 
+            };
             document.getElementById('titulo-vista').innerText = titulos[vista];
+            
+            const keypad = document.getElementById('floating-keypad');
+            keypad.style.display = (vista === 'pos') ? 'flex' : 'none';
+
             if(vista === 'productos') window.cargarTablaProductos();
             if(vista === 'diarias') window.cargarReporteDiario();
         };
 
-        // POS
+        // --- RESIZABLE LAYOUT ---
+        window.toggleLayoutLock = () => {
+            window.isLayoutLocked = !window.isLayoutLocked;
+            const btn = document.getElementById('btn-lock-layout');
+            const h = document.getElementById('resizer-h');
+            const v = document.getElementById('resizer-v');
+
+            if(window.isLayoutLocked) {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i>';
+                btn.className = "btn btn-sm btn-warning me-2";
+                h.classList.add('resizer-locked');
+                v.classList.add('resizer-locked');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-lock-open"></i>';
+                btn.className = "btn btn-sm btn-outline-warning me-2";
+                h.classList.remove('resizer-locked');
+                v.classList.remove('resizer-locked');
+            }
+        };
+
+        const resizerH = document.getElementById('resizer-h');
+        const resizerV = document.getElementById('resizer-v');
+        const panelTicket = document.getElementById('panel-ticket');
+        const mainContainer = document.getElementById('main-container');
+
+        let isResizingH = false;
+        resizerH.addEventListener('mousedown', (e) => { if(!window.isLayoutLocked) { isResizingH = true; document.body.style.cursor = 'col-resize'; } });
+        resizerH.addEventListener('touchstart', (e) => { if(!window.isLayoutLocked) isResizingH = true; });
+
+        let isResizingV = false;
+        resizerV.addEventListener('mousedown', (e) => { if(!window.isLayoutLocked) { isResizingV = true; document.body.style.cursor = 'row-resize'; } });
+        resizerV.addEventListener('touchstart', (e) => { if(!window.isLayoutLocked) isResizingV = true; });
+
+        document.addEventListener('mousemove', (e) => {
+            if(isResizingH) {
+                const newWidth = window.innerWidth - e.clientX;
+                if(newWidth > 200 && newWidth < window.innerWidth - 200) panelTicket.style.width = newWidth + 'px';
+            }
+            if(isResizingV) {
+                const newHeight = e.clientY - 50;
+                if(newHeight > 300) mainContainer.style.height = newHeight + 'px';
+            }
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if(isResizingH) {
+                const newWidth = window.innerWidth - e.touches[0].clientX;
+                if(newWidth > 200 && newWidth < window.innerWidth - 200) panelTicket.style.width = newWidth + 'px';
+            }
+            if(isResizingV) {
+                const newHeight = e.touches[0].clientY - 50;
+                if(newHeight > 300) mainContainer.style.height = newHeight + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => { isResizingH = false; isResizingV = false; document.body.style.cursor = 'default'; });
+        document.addEventListener('touchend', () => { isResizingH = false; isResizingV = false; });
+
+        window.resetLayout = () => {
+            panelTicket.style.width = '350px';
+            mainContainer.style.height = 'calc(100vh - 50px)';
+            window.resetTecladoPos();
+        };
+
+        // --- TECLADO FLOTANTE ---
+        const keypad = document.getElementById("floating-keypad");
+        const header = document.getElementById("keypad-header");
+        const savedPos = JSON.parse(localStorage.getItem("posTeclado"));
+        
+        if (savedPos) {
+            keypad.style.left = savedPos.left; keypad.style.top = savedPos.top;
+            keypad.style.width = savedPos.width; keypad.style.height = savedPos.height;
+        }
+
+        let isDragging = false, startX, startY, initLeft, initTop;
+        const startDrag = (e) => {
+            if(e.target.closest('button')) return;
+            isDragging = true;
+            startX = e.clientX || e.touches[0].clientX;
+            startY = e.clientY || e.touches[0].clientY;
+            const rect = keypad.getBoundingClientRect();
+            initLeft = rect.left; initTop = rect.top;
+        };
+        const doDrag = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            keypad.style.left = (initLeft + clientX - startX) + 'px';
+            keypad.style.top = (initTop + clientY - startY) + 'px';
+            keypad.style.right = "auto"; keypad.style.bottom = "auto";
+        };
+        const stopDrag = () => { if(isDragging) saveConfig(); isDragging = false; };
+
+        const resizeKeypad = document.getElementById("resize-handle");
+        let isResizingK = false, startW, startH;
+        const startResizeK = (e) => {
+            if(keypad.classList.contains('minimized')) return;
+            isResizingK = true;
+            startX = e.clientX || e.touches[0].clientX;
+            startY = e.clientY || e.touches[0].clientY;
+            startW = parseInt(document.defaultView.getComputedStyle(keypad).width, 10);
+            startH = parseInt(document.defaultView.getComputedStyle(keypad).height, 10);
+            e.stopPropagation();
+        };
+        const doResizeK = (e) => {
+            if (!isResizingK) return;
+            e.preventDefault();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            keypad.style.width = (startW + clientX - startX) + 'px';
+            keypad.style.height = (startH + clientY - startY) + 'px';
+        };
+        const stopResizeK = () => { if(isResizingK) saveConfig(); isResizingK = false; };
+
+        function saveConfig() {
+            if(keypad.classList.contains('minimized')) return;
+            localStorage.setItem("posTeclado", JSON.stringify({
+                left: keypad.style.left, top: keypad.style.top,
+                width: keypad.style.width, height: keypad.style.height
+            }));
+        }
+
+        window.resetTecladoPos = () => {
+            localStorage.removeItem("posTeclado");
+            keypad.style = "";
+            keypad.classList.remove('minimized');
+            document.getElementById('btn-min-max').innerHTML = '<i class="fa-solid fa-minus"></i>';
+        };
+
+        window.toggleMinimize = () => {
+            keypad.classList.toggle('minimized');
+            const btn = document.getElementById('btn-min-max');
+            if(keypad.classList.contains('minimized')) {
+                btn.innerHTML = '<i class="fa-regular fa-window-maximize"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-minus"></i>';
+            }
+        };
+
+        header.addEventListener('mousedown', startDrag); document.addEventListener('mousemove', doDrag); document.addEventListener('mouseup', stopDrag);
+        header.addEventListener('touchstart', startDrag); document.addEventListener('touchmove', doDrag); document.addEventListener('touchend', stopDrag);
+        resizeKeypad.addEventListener('mousedown', startResizeK); document.addEventListener('mousemove', doResizeK); document.addEventListener('mouseup', stopResizeK);
+        resizeKeypad.addEventListener('touchstart', startResizeK); document.addEventListener('touchmove', doResizeK); document.addEventListener('touchend', stopResizeK);
+
+        // --- POS LOGICA ---
         window.renderizarPOS = () => {
-            const grid = document.getElementById('grid-productos-pos'); grid.innerHTML = '';
+            const grid = document.getElementById('grid-productos-pos');
+            if(!grid) return;
+            grid.innerHTML = '';
             window.productos.forEach(p => {
-                grid.innerHTML += `<div class="col-4 col-lg-3"><button class="btn-producto" style="background-color:${p.color};color:${window.getContrastYIQ(p.color)}" onclick="agregar('${p.id}')"><span class="small text-uppercase opacity-75">${p.nombre}</span><span class="fs-4 mb-0">$${p.precio}</span></button></div>`;
+                grid.innerHTML += `<div class="col-4 col-lg-3">
+                    <button class="btn-producto" style="background-color:${p.color};color:${window.getContrastYIQ(p.color)}" onclick="agregar('${p.id}')">
+                        <span class="small text-uppercase opacity-75">${p.nombre}</span>
+                        <span class="fs-4 mb-0">$${p.precio}</span>
+                    </button>
+                </div>`;
             });
         };
+
         window.agregar = (id) => {
             const p = window.productos.find(x => x.id === id);
             const i = window.carrito.find(x => x.id === id);
             if(i) i.cantidad++; else window.carrito.push({...p, cantidad:1});
             window.actualizarTicket();
         };
+
         window.modCant = (idx, n) => {
             window.carrito[idx].cantidad += n;
             if(window.carrito[idx].cantidad <= 0) window.carrito.splice(idx, 1);
             window.actualizarTicket();
         };
+
         window.limpiarTicket = () => {
-            if(window.carrito.length > 0 && confirm('¿Borrar todo?')) { window.carrito=[]; window.montoRecibido=""; window.actualizarTicket(); }
-            else { window.montoRecibido=""; window.actualizarTicket(); }
-        };
-        window.actualizarTicket = () => {
-            const lista = document.getElementById('ticket-lista'); lista.innerHTML = '';
-            let total = 0, count = 0;
-            window.carrito.forEach((item, idx) => {
-                total += item.precio*item.cantidad; count+=item.cantidad;
-                lista.innerHTML += `<div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2" style="font-size:0.95rem"><div style="width:40%"><div class="fw-bold text-truncate">${item.nombre}</div><small class="text-muted">$${item.precio}</small></div><div class="bg-light rounded border"><button class="btn btn-sm btn-ajuste text-danger fw-bold" onclick="modCant(${idx},-1)">-</button><span class="mx-2 fw-bold fs-6">${item.cantidad}</span><button class="btn btn-sm btn-ajuste text-success fw-bold" onclick="modCant(${idx},1)">+</button></div><div class="fw-bold text-end" style="width:20%">$${item.precio*item.cantidad}</div></div>`;
-            });
-            document.getElementById('items-count').innerText = count;
-            document.getElementById('txt-total').innerText = '$'+total;
-            const rec = parseInt(window.montoRecibido||0);
-            document.getElementById('txt-recibido').innerText = window.montoRecibido ? '$'+rec : '-';
-            const lbl = document.getElementById('txt-cambio');
-            if(!window.montoRecibido){ lbl.innerText="$0"; lbl.className="fw-bold text-secondary"; }
-            else if(rec<total){ lbl.innerText="FALTA $"+(total-rec); lbl.className="fw-bold text-danger bg-warning px-2 rounded"; }
-            else { lbl.innerText="$"+(rec-total); lbl.className="fw-bold text-success"; }
-        };
-        window.teclado = (n) => { window.montoRecibido+=n; window.actualizarTicket(); };
-        window.borrarInput = () => { window.montoRecibido=""; window.actualizarTicket(); };
-        window.cobrar = async () => {
-            const total = window.carrito.reduce((s,i)=>s+(i.precio*i.cantidad),0);
-            if(total===0) return;
-            let pago = parseInt(window.montoRecibido||total);
-            if(window.montoRecibido && pago<total) return alert("Pago insuficiente");
-            try {
-                await addDoc(collection(db, "ventas"), { fecha: new Date().toISOString(), items: window.carrito, total: total, pago: pago });
-                window.carrito=[]; window.montoRecibido=""; window.actualizarTicket();
-                const btn = document.querySelector('.btn-success'); const original = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> GUARDADO';
-                setTimeout(() => btn.innerHTML = original, 1500);
-            } catch (e) { alert("Error al guardar: " + e.message); }
+            if(window.carrito.length > 0 && confirm('¿Borrar todo?')) {
+                window.carrito = []; window.montoRecibido = ""; window.actualizarTicket();
+            } else {
+                window.montoRecibido = ""; window.actualizarTicket();
+            }
         };
 
-        // CRUD PRODUCTOS
-        window.cargarTablaProductos = () => {
-            const b = document.getElementById('tabla-productos-body'); b.innerHTML='';
-            window.productos.forEach(p => { b.innerHTML+=`<tr><td><div style="width:25px;height:25px;background:${p.color};border-radius:50%"></div></td><td>${p.nombre}</td><td>$${p.precio}</td><td class="text-end"><button class="btn btn-sm btn-light border" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button></td></tr>`; });
+        window.actualizarTicket = () => {
+            const lista = document.getElementById('ticket-lista');
+            if(!lista) return;
+            lista.innerHTML = '';
+            let total = 0, count = 0;
+
+            window.carrito.forEach((item, idx) => {
+                total += item.precio * item.cantidad;
+                count += item.cantidad;
+                lista.innerHTML += `<div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2" style="font-size:0.9rem">
+                    <div style="width:40%"><div class="fw-bold text-truncate">${item.nombre}</div><small class="text-muted">$${item.precio}</small></div>
+                    <div class="bg-light rounded border">
+                        <button class="btn btn-sm btn-ajuste text-danger fw-bold" onclick="modCant(${idx},-1)">-</button>
+                        <span class="mx-2 fw-bold">${item.cantidad}</span>
+                        <button class="btn btn-sm btn-ajuste text-success fw-bold" onclick="modCant(${idx},1)">+</button>
+                    </div>
+                    <div class="fw-bold text-end" style="width:20%">$${item.precio*item.cantidad}</div>
+                </div>`;
+            });
+
+            document.getElementById('items-count').innerText = count;
+            document.getElementById('txt-total').innerText = '$' + total;
+            document.getElementById('keypad-total-info').innerText = 'Total: $' + total;
+
+            const rec = parseInt(window.montoRecibido || 0);
+            const lblRec = window.montoRecibido ? '$' + rec : '-';
+            document.getElementById('txt-recibido-main').innerText = 'Recibido: ' + lblRec;
+            document.getElementById('keypad-input').innerText = lblRec;
+
+            let lblCambio = "$0";
+            let claseColor = "text-secondary";
+            if (window.montoRecibido) {
+                if (rec < total) {
+                    lblCambio = "FALTA $" + (total - rec);
+                    claseColor = "text-danger fw-bold";
+                } else {
+                    lblCambio = "$" + (rec - total);
+                    claseColor = "text-success fw-bold";
+                }
+            }
+
+            document.getElementById('txt-cambio-main').innerText = 'Cambio: ' + lblCambio;
+            const elKey = document.getElementById('keypad-cambio-info');
+            elKey.innerText = 'Cambio: ' + lblCambio;
+            elKey.className = claseColor;
         };
-        window.abrirModalProducto = () => { window.editId=null; document.getElementById('prod-nombre').value=''; document.getElementById('prod-precio').value=''; document.getElementById('prod-color').value='#2ecc71'; document.getElementById('btn-del-prod').style.display='none'; modal.show(); };
-        window.editarProd = (id) => { const p = window.productos.find(x => x.id === id); window.editId = id; document.getElementById('prod-nombre').value=p.nombre; document.getElementById('prod-precio').value=p.precio; document.getElementById('prod-color').value=p.color; document.getElementById('btn-del-prod').style.display='block'; modal.show(); };
+
+        window.teclado = (n) => { window.montoRecibido += n; window.actualizarTicket(); };
+        window.borrarInput = () => { window.montoRecibido = ""; window.actualizarTicket(); };
+
+        window.cobrar = async () => {
+            const total = window.carrito.reduce((s, i) => s + (i.precio * i.cantidad), 0);
+            if(total === 0) return;
+            let pago = parseInt(window.montoRecibido || total);
+            if(window.montoRecibido && pago < total) return alert("Pago insuficiente");
+
+            try {
+                await addDoc(collection(db, "ventas"), {
+                    fecha: new Date().toISOString(),
+                    items: window.carrito,
+                    total: total,
+                    pago: pago
+                });
+                window.carrito = [];
+                window.montoRecibido = "";
+                window.actualizarTicket();
+                const b = document.querySelector('#btn-cobrar-key');
+                const o = b.innerHTML;
+                b.innerHTML = '¡GUARDADO!';
+                setTimeout(() => b.innerHTML = o, 1000);
+            } catch (e) { alert("Error: " + e.message); }
+        };
+
+        // --- CRUD PRODUCTOS ---
+        window.cargarTablaProductos = () => {
+            const b = document.getElementById('tabla-productos-body');
+            if(!b) return;
+            b.innerHTML = '';
+            window.productos.forEach(p => {
+                b.innerHTML += `<tr data-id="${p.id}">
+                    <td class="handle-drag"><i class="fa-solid fa-grip-vertical"></i></td>
+                    <td><div style="width:25px;height:25px;background:${p.color};border-radius:50%"></div></td>
+                    <td>${p.nombre}</td>
+                    <td>$${p.precio}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-light border me-1" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger border" onclick="eliminarProductoDirecto('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            if(b.sortableInstance) b.sortableInstance.destroy();
+            b.sortableInstance = new Sortable(b, { handle: '.handle-drag', animation: 150, onEnd: function() { actualizarOrdenProductos(); } });
+        };
+
+        async function actualizarOrdenProductos() {
+            const rows = document.querySelectorAll('#tabla-productos-body tr');
+            const batch = writeBatch(db);
+            rows.forEach((row, index) => {
+                const id = row.getAttribute('data-id');
+                const ref = doc(db, "productos", id);
+                batch.update(ref, { orden: index });
+            });
+            try { await batch.commit(); } catch(e) { console.error(e); }
+        }
+
+        window.eliminarProductoDirecto = async (id) => { if(confirm('¿Borrar producto?')) { try { await deleteDoc(doc(db, "productos", id)); } catch(e) { alert(e.message); } } };
+        window.abrirModalProducto = () => { window.editId = null; document.getElementById('prod-nombre').value = ''; document.getElementById('prod-precio').value = ''; document.getElementById('prod-color').value = '#2ecc71'; document.getElementById('btn-del-prod').style.display = 'none'; modal.show(); };
+        window.editarProd = (id) => { const p = window.productos.find(x => x.id === id); window.editId = id; document.getElementById('prod-nombre').value = p.nombre; document.getElementById('prod-precio').value = p.precio; document.getElementById('prod-color').value = p.color; document.getElementById('btn-del-prod').style.display = 'block'; modal.show(); };
+        
         window.guardarProducto = async () => {
-            const n = document.getElementById('prod-nombre').value; const pr = parseFloat(document.getElementById('prod-precio').value); const c = document.getElementById('prod-color').value;
+            const n = document.getElementById('prod-nombre').value;
+            const pr = parseFloat(document.getElementById('prod-precio').value);
+            const c = document.getElementById('prod-color').value;
             if(!n || !pr) return;
             try {
                 if(window.editId) await updateDoc(doc(db, "productos", window.editId), { nombre:n, precio:pr, color:c });
-                else await addDoc(collection(db, "productos"), { nombre:n, precio:pr, color:c });
+                else { const total = window.productos.length; await addDoc(collection(db, "productos"), { nombre:n, precio:pr, color:c, orden: total }); }
                 modal.hide();
             } catch (e) { alert("Error: " + e.message); }
         };
-        window.eliminarProducto = async () => { if(confirm('¿Eliminar?')) { try { await deleteDoc(doc(db, "productos", window.editId)); modal.hide(); } catch (e) { alert("Error: " + e.message); } } };
+        
+        window.eliminarProducto = async () => { if(confirm('¿Eliminar?')) { try { await deleteDoc(doc(db, "productos", window.editId)); modal.hide(); } catch(e) { alert(e.message); } } };
+        const modal = new bootstrap.Modal(document.getElementById('modalProducto'));
 
-        // HISTORIAL (HTML GENERATORS)
+        // --- VENTAS ESPECÍFICAS ---
+        window.cargarVentasEspecificas = () => {
+            const fechaInput = document.getElementById('filtro-dia-especifico').value;
+            if(!fechaInput) return;
+            
+            const ventasDia = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === fechaInput);
+            document.getElementById('contenido-especifico').style.display = 'block';
+            
+            const totalDinero = ventasDia.reduce((sum, v) => sum + (v.total || 0), 0);
+            document.getElementById('total-dia-esp').innerText = '$' + totalDinero;
+            document.getElementById('titulo-dia-esp').innerText = 'Resumen: ' + new Date(fechaInput + 'T12:00:00').toLocaleDateString();
+            
+            const ctx = document.getElementById('graficoEspecifico');
+            const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"];
+            const data = Array(12).fill(0);
+            ventasDia.forEach(v => {
+                const h = new Date(v.fecha).getHours();
+                if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
+            });
+            
+            if(window.chartEsp) window.chartEsp.destroy();
+            window.chartEsp = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#198754', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            const resumenProductos = {};
+            ventasDia.forEach(v => {
+                (v.items || []).forEach(item => {
+                    const n = item.nombre || "Desc";
+                    if(!resumenProductos[n]) resumenProductos[n] = { cant: 0, total: 0 };
+                    resumenProductos[n].cant += (item.cantidad || 0);
+                    resumenProductos[n].total += (item.precio * item.cantidad);
+                });
+            });
+
+            const ranking = Object.keys(resumenProductos).map(key => ({ nombre: key, ...resumenProductos[key] })).sort((a, b) => b.cant - a.cant);
+            const tbody = document.getElementById('tabla-productos-esp');
+            tbody.innerHTML = '';
+            if(ranking.length === 0) tbody.innerHTML = '<tr><td colspan="3" class="text-center">Sin ventas</td></tr>';
+            else ranking.forEach(p => { tbody.innerHTML += `<tr><td>${p.nombre}</td><td class="text-center fw-bold">${p.cant}</td><td class="text-end text-success">$${p.total}</td></tr>`; });
+        };
+
+        // --- HISTORIAL ---
+        window.eliminarTicket = async (idVenta) => { if(confirm("¿Eliminar ticket?")) try { await deleteDoc(doc(db, "ventas", idVenta)); } catch(e){alert(e.message);} };
+        window.toggleDetalle = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('fila-activa'); };
+        window.toggleCollapse = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('show'); };
+        window.modificarVentaPasada = async (idVenta, idxItem, cambio) => {
+            const venta = window.ventas.find(v => v.id === idVenta);
+            if(!venta) return;
+            const nuevosItems = [...venta.items];
+            const item = nuevosItems[idxItem];
+            item.cantidad += cambio;
+            if(item.cantidad <= 0) nuevosItems.splice(idxItem, 1);
+            try {
+                if(nuevosItems.length === 0) await deleteDoc(doc(db, "ventas", idVenta));
+                else {
+                    const nuevoTotal = nuevosItems.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
+                    await updateDoc(doc(db, "ventas", idVenta), { items: nuevosItems, total: nuevoTotal });
+                }
+            } catch(e) { alert(e.message); }
+        };
+
         function generarHTMLTickets(listaVentas, prefijoId) {
             if(!listaVentas || listaVentas.length === 0) return '<tr><td colspan="3" class="text-center text-muted p-3">Sin ventas</td></tr>';
             let html = '';
@@ -370,12 +658,28 @@
                 const idFila = prefijoId + '-' + v.id;
                 const itemsSafe = v.items || [];
                 const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>';
-                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span><button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                
+                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')">
+                    <td class="fw-bold text-secondary" style="width:20%">${hora}</td>
+                    <td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td>
+                    <td class="fw-bold text-end d-flex justify-content-end align-items-center">
+                        <span>$${(v.total||0)}</span>
+                        <button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+                
                 html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`;
                 if(itemsSafe.length > 0) {
                     html += '<ul class="list-group">';
                     itemsSafe.forEach((item, idxItem) => {
-                        html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span><div><button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button><span class="fw-bold">${(item.cantidad||0)}</span><button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button></div></li>`;
+                        html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                            <span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span>
+                            <div>
+                                <button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button>
+                                <span class="fw-bold">${(item.cantidad||0)}</span>
+                                <button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button>
+                            </div>
+                        </li>`;
                     });
                     html += '</ul>';
                 } else { html += '<p class="text-muted small">Ticket no editable.</p>'; }
@@ -384,25 +688,7 @@
             return html;
         }
 
-        // EXPORTED FUNCTIONS FOR HTML
-        window.eliminarTicket = async (idVenta) => { if(confirm("¿Eliminar ticket?")) try { await deleteDoc(doc(db, "ventas", idVenta)); } catch(e){alert(e.message);} };
-        window.toggleDetalle = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('fila-activa'); };
-        window.toggleCollapse = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('show'); };
-        window.modificarVentaPasada = async (idVenta, idxItem, cambio) => {
-            const venta = window.ventas.find(v => v.id === idVenta); if(!venta) return;
-            const nuevosItems = [...venta.items]; const item = nuevosItems[idxItem];
-            item.cantidad += cambio;
-            if(item.cantidad <= 0) nuevosItems.splice(idxItem, 1);
-            try {
-                if(nuevosItems.length === 0) await deleteDoc(doc(db, "ventas", idVenta));
-                else {
-                    const nuevoTotal = nuevosItems.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
-                    await updateDoc(doc(db, "ventas", idVenta), { items: nuevosItems, total: nuevoTotal });
-                }
-            } catch(e){alert(e.message);}
-        };
-
-        // REPORTES
+        // REPORTES GENERICOS
         window.cargarReporteDiario = () => {
             const hoyStr = window.fechaLocalCorta(new Date().toISOString());
             const ventasHoy = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === hoyStr);
@@ -412,41 +698,93 @@
             document.getElementById('tbody-ventas-hoy').innerHTML = generarHTMLTickets(ventasHoy, 'dia');
             generarGraficaHoras(ventasHoy);
         };
+
         window.cargarReporteGeneral = () => {
-            const ini = document.getElementById('filtro-inicio').value; const fin = document.getElementById('filtro-fin').value;
+            const ini = document.getElementById('filtro-inicio').value;
+            const fin = document.getElementById('filtro-fin').value;
             const div = document.getElementById('contenedor-historial');
             if(!ini || !fin) return;
-            const filtradas = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; });
+            
+            const filtradas = window.ventas.filter(v => {
+                const f = window.fechaLocalCorta(v.fecha);
+                return f >= ini && f <= fin;
+            });
+
             if(filtradas.length === 0) { div.innerHTML = '<div class="alert alert-light text-center border">No hay ventas.</div>'; return; }
+            
             const grupos = {};
-            filtradas.forEach(v => { const dia = window.fechaLocalCorta(v.fecha); if(!grupos[dia]) grupos[dia] = []; grupos[dia].push(v); });
+            filtradas.forEach(v => {
+                const dia = window.fechaLocalCorta(v.fecha);
+                if(!grupos[dia]) grupos[dia] = [];
+                grupos[dia].push(v);
+            });
+
             let html = '<div class="accordion">';
             Object.keys(grupos).sort().reverse().forEach(dia => {
-                const lista = grupos[dia]; const totalDia = lista.reduce((s, v) => s + (v.total || 0), 0);
+                const lista = grupos[dia];
+                const totalDia = lista.reduce((s, v) => s + (v.total || 0), 0);
                 const fechaTexto = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'});
                 const idCollapse = 'collapse-' + dia;
-                html += `<div class="card mb-2 border-0 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')"><div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div><h5 class="mb-0 fw-bold text-success">$${totalDia}</h5></div><div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">${generarHTMLTickets(lista, 'gen-'+dia)}</tbody></table></div></div></div>`;
+                
+                html += `<div class="card mb-2 border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')">
+                        <div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div>
+                        <h5 class="mb-0 fw-bold text-success">$${totalDia}</h5>
+                    </div>
+                    <div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">
+                        ${generarHTMLTickets(lista, 'gen-' + dia)}
+                    </tbody></table></div></div>
+                </div>`;
             });
-            html += '</div>'; div.innerHTML = html;
+            html += '</div>';
+            div.innerHTML = html;
         };
+
         function generarGraficaHoras(datos) {
-            const ctx = document.getElementById('graficoDia'); const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"]; const data = Array(12).fill(0);
-            datos.forEach(v => { const h = new Date(v.fecha).getHours(); if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); } });
+            const ctx = document.getElementById('graficoDia');
+            const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"];
+            const data = Array(12).fill(0);
+            datos.forEach(v => {
+                const h = new Date(v.fecha).getHours();
+                if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
+            });
             if(window.chartDia) window.chartDia.destroy();
-            window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            window.chartDia = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
         }
+
         window.descargarExcel = () => {
-            const ini = document.getElementById('exp-inicio').value; const fin = document.getElementById('exp-fin').value;
+            const ini = document.getElementById('exp-inicio').value;
+            const fin = document.getElementById('exp-fin').value;
             if(!ini || !fin) return alert("Selecciona fechas");
-            const rep = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f>=ini && f<=fin; });
-            if(rep.length===0) return alert("Sin datos");
+            const rep = window.ventas.filter(v => {
+                const f = window.fechaLocalCorta(v.fecha);
+                return f >= ini && f <= fin;
+            });
+            if(rep.length === 0) return alert("Sin datos");
+            
             const filas = [];
-            rep.forEach(v => { const itemsSafe = v.items || []; const fechaLocal = new Date(v.fecha).toLocaleDateString(); const horaLocal = new Date(v.fecha).toLocaleTimeString(); if(itemsSafe.length === 0) filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 }); else itemsSafe.forEach(i => filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad })); });
-            const ws = XLSX.utils.json_to_sheet(filas); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+            rep.forEach(v => {
+                const itemsSafe = v.items || [];
+                const fechaLocal = new Date(v.fecha).toLocaleDateString();
+                const horaLocal = new Date(v.fecha).toLocaleTimeString();
+                if(itemsSafe.length === 0) {
+                    filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 });
+                } else {
+                    itemsSafe.forEach(i => {
+                        filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio * i.cantidad });
+                    });
+                }
+            });
+            const ws = XLSX.utils.json_to_sheet(filas);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Ventas");
             XLSX.writeFile(wb, `Ventas_${ini}_${fin}.xlsx`);
         };
 
-        // INIT
         const hoy = window.fechaLocalCorta(new Date().toISOString());
         document.querySelectorAll('input[type="date"]').forEach(i => i.value = hoy);
     </script>
