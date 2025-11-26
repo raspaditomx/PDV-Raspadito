@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raspadito System v18 (Clean Code)</title>
+    <title>Raspadito System v21 (No Bounce)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,47 +12,113 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <style>
-        /* ESTILOS GLOBALES */
-        * { -webkit-user-select: none; -moz-user-select: none; user-select: none; touch-action: manipulation; }
+        /* BLOQUEOS Y AJUSTES TÁCTILES */
+        * { -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
         input, textarea { user-select: text !important; -webkit-user-select: text !important; }
-        body { background-color: #f0f2f5; height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         
-        .navbar-custom { height: 50px; background-color: #212529; flex-shrink: 0; }
+        body { 
+            background-color: #f0f2f5; 
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            overflow: hidden; 
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+        }
+        
+        .navbar-custom { height: 50px; background-color: #212529; flex-shrink: 0; z-index: 100; }
         
         /* CONTENEDOR PRINCIPAL */
-        .main-container { height: calc(100vh - 50px); margin-top: 50px; display: flex; flex-direction: column; overflow: hidden; }
-        .seccion-app { display: none; width: 100%; height: 100%; overflow-y: auto; padding-bottom: 150px; }
+        /* NOTA: Se eliminó 'transition' para evitar el rebote */
+        .main-container { 
+            height: calc(100% - 50px); 
+            margin-top: 50px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+        }
+        
+        .seccion-app { display: none; width: 100%; height: 100%; overflow-y: auto; padding-bottom: 100px; touch-action: pan-y; }
         .seccion-activa { display: block; }
 
-        /* LAYOUT POS */
-        #vista-pos { display: none; flex-direction: column; height: 100%; }
+        /* POS LAYOUT */
+        #vista-pos { display: none; flex-direction: column; height: 100%; overflow: hidden; }
         #vista-pos.seccion-activa { display: flex; }
+
         .pos-split-container { display: flex; flex-grow: 1; overflow: hidden; }
 
-        .panel-productos { flex-grow: 1; overflow-y: auto; padding: 10px; background-color: #e9ecef; min-width: 200px; }
+        .panel-productos { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 10px; 
+            background-color: #e9ecef; 
+            min-width: 200px;
+            touch-action: pan-y;
+        }
         
-        /* RESIZERS */
-        .resizer-h { width: 12px; background-color: #e0e0e0; cursor: col-resize; display: flex; justify-content: center; align-items: center; border-left: 1px solid #ccc; border-right: 1px solid #ccc; z-index: 10; }
-        .resizer-h::after { content: ""; display: block; width: 4px; height: 20px; border-left: 1px solid #999; border-right: 1px solid #999; }
+        /* RESIZER HORIZONTAL */
+        .resizer-h { 
+            width: 30px;
+            margin-left: -15px; margin-right: -15px;
+            position: relative; z-index: 50;
+            cursor: col-resize; 
+            display: flex; justify-content: center; align-items: center; 
+            touch-action: none;
+        }
+        .resizer-h::before { content: ""; position: absolute; left: 14px; top:0; bottom:0; width: 2px; background: #ccc; }
+        .resizer-h::after { 
+            content: ""; display: block; width: 6px; height: 30px; 
+            background: #e0e0e0; border: 1px solid #999; border-radius: 3px;
+            position: relative; z-index: 51;
+        }
         
-        .panel-ticket { width: 350px; min-width: 250px; background: white; display: flex; flex-direction: column; height: 100%; }
+        .panel-ticket { 
+            width: 350px; min-width: 200px; 
+            background: white; display: flex; flex-direction: column; height: 100%; 
+            border-left: 1px solid #ccc;
+        }
+
+        /* RESIZER VERTICAL (EL DEL PROBLEMA) */
+        .resizer-v { 
+            height: 30px; /* Zona de toque más amplia */
+            margin-top: -15px; margin-bottom: -15px;
+            position: relative; z-index: 50;
+            cursor: row-resize; 
+            display: flex; justify-content: center; align-items: center; 
+            touch-action: none; /* Vital para evitar scroll nativo */
+        }
+        /* Línea visual */
+        .resizer-v::before { content: ""; position: absolute; top: 14px; left:0; right:0; height: 2px; background: #ccc; }
+        /* Grip visual */
+        .resizer-v::after { 
+            content: ""; display: block; width: 30px; height: 6px; 
+            background: #e0e0e0; border: 1px solid #999; border-radius: 3px;
+            position: relative; z-index: 51;
+        }
         
-        .resizer-v { height: 12px; background-color: #e0e0e0; cursor: row-resize; display: flex; justify-content: center; align-items: center; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; flex-shrink: 0; }
-        .resizer-v::after { content: ""; display: block; width: 20px; height: 4px; border-top: 1px solid #999; border-bottom: 1px solid #999; }
         .resizer-locked { cursor: default !important; opacity: 0.5; pointer-events: none; }
 
         /* ELEMENTOS */
-        .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; }
+        .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; touch-action: pan-y; }
         .area-totales { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 15px; flex-shrink: 0; }
-        .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; }
+        .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; touch-action: manipulation; }
         .btn-producto:active { transform: scale(0.95); }
 
-        /* TECLADO FLOTANTE */
-        #floating-keypad { position: fixed; bottom: 20px; right: 20px; width: 320px; height: 480px; background: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; z-index: 9999; backdrop-filter: blur(5px); min-width: 200px; min-height: 40px; transition: height 0.3s ease, width 0.3s ease; container-type: size; }
-        #floating-keypad.minimized { height: 40px !important; width: 200px !important; overflow: hidden; resize: none; }
-        #floating-keypad.minimized #keypad-body, #floating-keypad.minimized #resize-handle { display: none; }
-        #keypad-header { height: 40px; background: #212529; color: white; border-radius: 15px 15px 0 0; cursor: move; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: bold; font-size: 0.9rem; }
-        #floating-keypad.minimized #keypad-header { border-radius: 15px; }
+        /* TECLADO FLOTANTE (SIN TRANSICIONES TAMPOCO) */
+        #floating-keypad { 
+            position: fixed; bottom: 20px; right: 20px; width: 320px; height: 480px; 
+            background: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; 
+            z-index: 9999; backdrop-filter: blur(5px); min-width: 200px; min-height: 40px; 
+            container-type: size; touch-action: none;
+            /* transition: eliminada */
+        }
+        
+        #keypad-header { 
+            height: 40px; background: #212529; color: white; border-radius: 15px 15px 0 0; 
+            cursor: move; display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 0.9rem; letter-spacing: 1px;
+            touch-action: none;
+        }
+        
         #keypad-body { flex-grow: 1; padding: 2cqh; display: flex; flex-direction: column; gap: 1cqh; }
         
         .screen-keypad { text-align: right; background: #f8f9fa; padding: 2cqh; border-radius: 8px; border: 1px solid #dee2e6; display: flex; flex-direction: column; justify-content: center; height: 20%; }
@@ -62,9 +128,15 @@
         .teclado-btn { width: 100%; height: 100%; font-size: 5cqh; font-weight: bold; border-radius: 8px; border: 1px solid #ced4da; background-color: white; display: flex; align-items: center; justify-content: center; padding: 0; }
         .teclado-btn:active { background-color: #e2e6ea; }
         #btn-cobrar-key { font-size: 5cqh; height: 15%; }
-        #resize-handle { width: 25px; height: 25px; background: linear-gradient(135deg, transparent 50%, #0d6efd 50%); position: absolute; bottom: 0; right: 0; cursor: nwse-resize; border-radius: 0 0 15px 0; z-index: 10; }
+        
+        /* MANIJA TECLADO (RAYITAS) */
+        #resize-handle { 
+            width: 30px; height: 30px; position: absolute; bottom: 2px; right: 2px; cursor: nwse-resize; 
+            background: repeating-linear-gradient(135deg, transparent, transparent 2px, #888 2px, #888 4px);
+            clip-path: polygon(100% 0, 0% 100%, 100% 100%); z-index: 10; touch-action: none;
+        }
 
-        .handle-drag { cursor: grab; color: #6c757d; padding: 10px; font-size: 1.2rem; }
+        .handle-drag { cursor: grab; color: #6c757d; padding: 15px; font-size: 1.5rem; touch-action: none; }
         .cursor-pointer { cursor: pointer; }
         .fila-detalle { display: none; background-color: #fff; } 
         .fila-activa { display: table-row !important; animation: fadeIn 0.3s; }
@@ -85,30 +157,45 @@
         <button class="btn btn-sm btn-outline-light border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral">
             <i class="fa-solid fa-bars fa-lg"></i> <span class="ms-2 fw-bold">MENÚ</span>
         </button>
+        
         <span class="text-white fw-bold small" id="titulo-vista">Punto de Venta</span>
+        
         <div class="ms-auto d-flex">
-            <button class="btn btn-sm btn-outline-warning me-2" id="btn-lock-layout" onclick="toggleLayoutLock()" title="Fijar Diseño"><i class="fa-solid fa-lock-open"></i></button>
-            <button class="btn btn-sm btn-outline-success" onclick="resetLayout()" title="Resetear Diseño"><i class="fa-solid fa-rotate-left"></i></button>
+            <button class="btn btn-sm btn-outline-warning" id="btn-lock-layout" onclick="toggleLayoutLock()" title="Fijar Diseño">
+                <i class="fa-solid fa-lock-open"></i>
+            </button>
         </div>
     </nav>
 
     <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuLateral">
-        <div class="offcanvas-header border-bottom border-secondary"><h5 class="offcanvas-title">Raspadito System</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button></div>
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title">Raspadito System</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
         <div class="list-group list-group-flush">
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('pos')"> <i class="fa-solid fa-cash-register me-2"></i> Punto de Venta </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('productos')"> <i class="fa-solid fa-tags me-2"></i> Inventario </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('diarias')"> <i class="fa-solid fa-chart-column me-2"></i> Reporte Diario </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('especificas')"> <i class="fa-solid fa-calendar-day me-2"></i> Ventas Específicas </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('generales')"> <i class="fa-solid fa-calendar-days me-2"></i> Historial General </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('exportar')"> <i class="fa-solid fa-file-excel me-2"></i> Exportar </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('pos')">
+                <i class="fa-solid fa-cash-register me-2"></i> Punto de Venta
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('productos')">
+                <i class="fa-solid fa-tags me-2"></i> Inventario
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('diarias')">
+                <i class="fa-solid fa-chart-column me-2"></i> Reporte Diario
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('especificas')">
+                <i class="fa-solid fa-calendar-day me-2"></i> Ventas Específicas
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('generales')">
+                <i class="fa-solid fa-calendar-days me-2"></i> Historial General
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('exportar')">
+                <i class="fa-solid fa-file-excel me-2"></i> Exportar
+            </button>
         </div>
     </div>
 
     <div id="floating-keypad">
-        <div id="keypad-header">
-            <span class="d-flex align-items-center"><i class="fa-solid fa-grip-vertical me-2 opacity-50"></i> Teclado</span>
-            <button class="btn btn-sm btn-light py-0 px-2 fw-bold" onclick="toggleMinimize()" id="btn-min-max"><i class="fa-solid fa-minus"></i></button>
-        </div>
+        <div id="keypad-header">Teclado</div>
         <div id="keypad-body">
             <div class="screen-keypad">
                 <div class="text-muted small text-start" style="font-size:2.5cqh">Recibido:</div>
@@ -119,9 +206,15 @@
                 </div>
             </div>
             <div class="teclado-grid">
-                <button class="teclado-btn" onclick="teclado(7)">7</button><button class="teclado-btn" onclick="teclado(8)">8</button><button class="teclado-btn" onclick="teclado(9)">9</button>
-                <button class="teclado-btn" onclick="teclado(4)">4</button><button class="teclado-btn" onclick="teclado(5)">5</button><button class="teclado-btn" onclick="teclado(6)">6</button>
-                <button class="teclado-btn" onclick="teclado(1)">1</button><button class="teclado-btn" onclick="teclado(2)">2</button><button class="teclado-btn" onclick="teclado(3)">3</button>
+                <button class="teclado-btn" onclick="teclado(7)">7</button>
+                <button class="teclado-btn" onclick="teclado(8)">8</button>
+                <button class="teclado-btn" onclick="teclado(9)">9</button>
+                <button class="teclado-btn" onclick="teclado(4)">4</button>
+                <button class="teclado-btn" onclick="teclado(5)">5</button>
+                <button class="teclado-btn" onclick="teclado(6)">6</button>
+                <button class="teclado-btn" onclick="teclado(1)">1</button>
+                <button class="teclado-btn" onclick="teclado(2)">2</button>
+                <button class="teclado-btn" onclick="teclado(3)">3</button>
                 <button class="teclado-btn text-danger" onclick="borrarInput()"><i class="fa-solid fa-delete-left"></i></button>
                 <button class="teclado-btn" onclick="teclado(0)">0</button>
                 <button class="teclado-btn btn-warning text-white" onclick="limpiarTicket()"><i class="fa-solid fa-trash"></i></button>
@@ -135,17 +228,31 @@
 
         <div id="vista-pos" class="seccion-app seccion-activa">
             <div class="pos-split-container">
-                <div class="panel-productos" id="panel-productos"><div class="row g-2" id="grid-productos-pos"></div></div>
+                <div class="panel-productos" id="panel-productos">
+                    <div class="row g-2" id="grid-productos-pos"></div>
+                </div>
+                
                 <div class="resizer-h" id="resizer-h"></div>
+                
                 <div class="panel-ticket shadow" id="panel-ticket">
-                    <div class="bg-secondary text-white px-3 py-2 d-flex justify-content-between"><span>Ticket</span> <span class="badge bg-light text-dark" id="items-count">0</span></div>
-                    <div id="ticket-lista" class="ticket-lista"><div class="text-center text-muted mt-5 small">Vacío</div></div>
+                    <div class="bg-secondary text-white px-3 py-2 d-flex justify-content-between">
+                        <span>Ticket</span> <span class="badge bg-light text-dark" id="items-count">0</span>
+                    </div>
+                    <div id="ticket-lista" class="ticket-lista">
+                        <div class="text-center text-muted mt-5 small">Vacío</div>
+                    </div>
                     <div class="area-totales">
-                        <div class="d-flex justify-content-between h3 fw-bold"><span>Total:</span> <span id="txt-total">$0</span></div>
-                        <div class="d-flex justify-content-between small text-muted"><span id="txt-recibido-main">Recibido: -</span><span id="txt-cambio-main">Cambio: $0</span></div>
+                        <div class="d-flex justify-content-between h3 fw-bold">
+                            <span>Total:</span> <span id="txt-total">$0</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span id="txt-recibido-main">Recibido: -</span>
+                            <span id="txt-cambio-main">Cambio: $0</span>
+                        </div>
                     </div>
                 </div>
             </div>
+            
             <div class="resizer-v" id="resizer-v"></div>
         </div>
 
@@ -155,7 +262,9 @@
                 <button class="btn btn-primary btn-sm" onclick="abrirModalProducto()">+ Nuevo</button>
             </div>
             <div class="table-responsive bg-white shadow-sm rounded">
-                <table class="table table-hover mb-0 align-middle"><tbody id="tabla-productos-body"></tbody></table>
+                <table class="table table-hover mb-0 align-middle">
+                    <tbody id="tabla-productos-body"></tbody>
+                </table>
             </div>
         </div>
 
@@ -165,18 +274,26 @@
                 <div class="col-6"><div class="card bg-white border p-3 shadow-sm h-100"><h6 class="small text-muted">Transacciones</h6><h3 class="fw-bold mb-0" id="reporte-conteo-hoy">0</h3></div></div>
             </div>
             <div class="card shadow-sm mb-4"><div class="card-header bg-white small fw-bold">Ventas por Hora (Hoy)</div><div class="card-body" style="height:250px"><canvas id="graficoDia"></canvas></div></div>
-            <h5 class="mb-2">Tickets de Hoy</h5><div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><tbody id="tbody-ventas-hoy"></tbody></table></div></div></div>
+            <h5 class="mb-2">Tickets de Hoy</h5>
+            <div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><tbody id="tbody-ventas-hoy"></tbody></table></div></div></div>
         </div>
 
         <div id="vista-especificas" class="seccion-app container py-3">
             <div class="card p-3 mb-4 bg-light shadow-sm border-0">
                 <label class="fw-bold small mb-2">Seleccionar Día:</label>
-                <div class="input-group"><input type="date" id="filtro-dia-especifico" class="form-control"><button class="btn btn-primary fw-bold" onclick="cargarVentasEspecificas()">VER REPORTE</button></div>
+                <div class="input-group">
+                    <input type="date" id="filtro-dia-especifico" class="form-control">
+                    <button class="btn btn-primary fw-bold" onclick="cargarVentasEspecificas()">VER REPORTE</button>
+                </div>
             </div>
             <div id="contenido-especifico" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0 fw-bold" id="titulo-dia-esp">Resumen</h4><span class="badge bg-success fs-5" id="total-dia-esp">$0</span></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0 fw-bold" id="titulo-dia-esp">Resumen</h4>
+                    <span class="badge bg-success fs-5" id="total-dia-esp">$0</span>
+                </div>
                 <div class="card shadow-sm mb-4"><div class="card-header bg-white small fw-bold">Actividad por Hora</div><div class="card-body" style="height:250px;"><canvas id="graficoEspecifico"></canvas></div></div>
-                <h5 class="mb-2">Ranking de Productos</h5><div class="card shadow-sm mb-4"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Producto</th><th class="text-center">Cant</th><th class="text-end">Total</th></tr></thead><tbody id="tabla-productos-esp"></tbody></table></div></div>
+                <h5 class="mb-2">Ranking de Productos</h5>
+                <div class="card shadow-sm mb-4"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Producto</th><th class="text-center">Cant</th><th class="text-end">Total</th></tr></thead><tbody id="tabla-productos-esp"></tbody></table></div></div>
             </div>
         </div>
 
@@ -263,168 +380,170 @@
             bootstrap.Offcanvas.getInstance(document.getElementById('menuLateral')).hide();
             
             const titulos = { 
-                'pos': 'Punto de Venta', 
-                'productos': 'Inventario', 
-                'diarias': 'Reporte Diario',
-                'especificas': 'Ventas Específicas', 
-                'generales': 'Historial', 
-                'exportar': 'Descargas' 
+                'pos': 'Punto de Venta', 'productos': 'Inventario', 
+                'diarias': 'Reporte Diario', 'especificas': 'Ventas Específicas', 
+                'generales': 'Historial', 'exportar': 'Descargas' 
             };
             document.getElementById('titulo-vista').innerText = titulos[vista];
             
             const keypad = document.getElementById('floating-keypad');
-            keypad.style.display = (vista === 'pos') ? 'flex' : 'none';
+            if (vista === 'pos') {
+                keypad.style.display = 'flex';
+            } else {
+                keypad.style.display = 'none';
+            }
 
             if(vista === 'productos') window.cargarTablaProductos();
             if(vista === 'diarias') window.cargarReporteDiario();
         };
 
-        // --- RESIZABLE LAYOUT ---
+        // --- RESIZABLE LAYOUT & TOUCH FIX ---
         window.toggleLayoutLock = () => {
             window.isLayoutLocked = !window.isLayoutLocked;
             const btn = document.getElementById('btn-lock-layout');
-            const h = document.getElementById('resizer-h');
-            const v = document.getElementById('resizer-v');
+            const h = document.querySelector('.resizer-h');
+            const v = document.querySelector('.resizer-v');
 
             if(window.isLayoutLocked) {
                 btn.innerHTML = '<i class="fa-solid fa-lock"></i>';
-                btn.className = "btn btn-sm btn-warning me-2";
+                btn.className = "btn btn-sm btn-warning";
                 h.classList.add('resizer-locked');
                 v.classList.add('resizer-locked');
             } else {
                 btn.innerHTML = '<i class="fa-solid fa-lock-open"></i>';
-                btn.className = "btn btn-sm btn-outline-warning me-2";
+                btn.className = "btn btn-sm btn-outline-warning";
                 h.classList.remove('resizer-locked');
                 v.classList.remove('resizer-locked');
             }
         };
 
-        const resizerH = document.getElementById('resizer-h');
-        const resizerV = document.getElementById('resizer-v');
-        const panelTicket = document.getElementById('panel-ticket');
+        const resizerH = document.querySelector('.resizer-h');
+        const resizerV = document.querySelector('.resizer-v');
+        const panelTicket = document.querySelector('.panel-ticket');
         const mainContainer = document.getElementById('main-container');
 
+        // Manejo Horizontal
         let isResizingH = false;
-        resizerH.addEventListener('mousedown', (e) => { if(!window.isLayoutLocked) { isResizingH = true; document.body.style.cursor = 'col-resize'; } });
-        resizerH.addEventListener('touchstart', (e) => { if(!window.isLayoutLocked) isResizingH = true; });
-
-        let isResizingV = false;
-        resizerV.addEventListener('mousedown', (e) => { if(!window.isLayoutLocked) { isResizingV = true; document.body.style.cursor = 'row-resize'; } });
-        resizerV.addEventListener('touchstart', (e) => { if(!window.isLayoutLocked) isResizingV = true; });
-
-        document.addEventListener('mousemove', (e) => {
-            if(isResizingH) {
-                const newWidth = window.innerWidth - e.clientX;
-                if(newWidth > 200 && newWidth < window.innerWidth - 200) panelTicket.style.width = newWidth + 'px';
-            }
-            if(isResizingV) {
-                const newHeight = e.clientY - 50;
-                if(newHeight > 300) mainContainer.style.height = newHeight + 'px';
-            }
-        });
+        const startH = (e) => { 
+            if(window.isLayoutLocked) return;
+            isResizingH = true; 
+            e.preventDefault(); 
+        };
         
-        document.addEventListener('touchmove', (e) => {
-            if(isResizingH) {
-                const newWidth = window.innerWidth - e.touches[0].clientX;
-                if(newWidth > 200 && newWidth < window.innerWidth - 200) panelTicket.style.width = newWidth + 'px';
-            }
-            if(isResizingV) {
-                const newHeight = e.touches[0].clientY - 50;
-                if(newHeight > 300) mainContainer.style.height = newHeight + 'px';
-            }
-        });
-
-        document.addEventListener('mouseup', () => { isResizingH = false; isResizingV = false; document.body.style.cursor = 'default'; });
-        document.addEventListener('touchend', () => { isResizingH = false; isResizingV = false; });
-
-        window.resetLayout = () => {
-            panelTicket.style.width = '350px';
-            mainContainer.style.height = 'calc(100vh - 50px)';
-            window.resetTecladoPos();
+        // Manejo Vertical
+        let isResizingV = false;
+        const startV = (e) => { 
+            if(window.isLayoutLocked) return;
+            isResizingV = true; 
+            e.preventDefault();
         };
 
-        // --- TECLADO FLOTANTE ---
+        resizerH.addEventListener('mousedown', startH);
+        resizerH.addEventListener('touchstart', startH, {passive: false});
+        
+        resizerV.addEventListener('mousedown', startV);
+        resizerV.addEventListener('touchstart', startV, {passive: false});
+
+        const handleMove = (e) => {
+            if(!isResizingH && !isResizingV) return;
+            
+            // Obtener coordenadas (Mouse o Touch)
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            if(isResizingH && clientX) {
+                e.preventDefault();
+                const newWidth = window.innerWidth - clientX;
+                if(newWidth > 200 && newWidth < window.innerWidth - 100) {
+                    panelTicket.style.width = newWidth + 'px';
+                }
+            }
+            if(isResizingV && clientY) {
+                e.preventDefault();
+                const newHeight = clientY - 50;
+                // Permite estirar hasta abajo sin limite de '100vh'
+                if(newHeight > 300) {
+                    mainContainer.style.height = newHeight + 'px';
+                }
+            }
+        };
+
+        const handleEnd = () => { isResizingH = false; isResizingV = false; };
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, {passive: false});
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        // --- TECLADO FLOTANTE (DRAG & RESIZE) ---
         const keypad = document.getElementById("floating-keypad");
         const header = document.getElementById("keypad-header");
-        const savedPos = JSON.parse(localStorage.getItem("posTeclado"));
+        const resizerKey = document.getElementById("resize-handle");
         
+        const savedPos = JSON.parse(localStorage.getItem("posTeclado"));
         if (savedPos) {
             keypad.style.left = savedPos.left; keypad.style.top = savedPos.top;
             keypad.style.width = savedPos.width; keypad.style.height = savedPos.height;
         }
 
-        let isDragging = false, startX, startY, initLeft, initTop;
-        const startDrag = (e) => {
-            if(e.target.closest('button')) return;
-            isDragging = true;
-            startX = e.clientX || e.touches[0].clientX;
-            startY = e.clientY || e.touches[0].clientY;
+        // DRAG
+        let isDragK = false, startXK, startYK, initLeftK, initTopK;
+        const startDragK = (e) => {
+            isDragK = true;
+            startXK = e.clientX || e.touches[0].clientX;
+            startYK = e.clientY || e.touches[0].clientY;
             const rect = keypad.getBoundingClientRect();
-            initLeft = rect.left; initTop = rect.top;
-        };
-        const doDrag = (e) => {
-            if (!isDragging) return;
+            initLeftK = rect.left; initTopK = rect.top;
             e.preventDefault();
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            keypad.style.left = (initLeft + clientX - startX) + 'px';
-            keypad.style.top = (initTop + clientY - startY) + 'px';
-            keypad.style.right = "auto"; keypad.style.bottom = "auto";
         };
-        const stopDrag = () => { if(isDragging) saveConfig(); isDragging = false; };
+        
+        const moveDragK = (e) => {
+            if(!isDragK) return;
+            e.preventDefault();
+            const cx = e.clientX || e.touches[0].clientX;
+            const cy = e.clientY || e.touches[0].clientY;
+            keypad.style.left = (initLeftK + cx - startXK) + 'px';
+            keypad.style.top = (initTopK + cy - startYK) + 'px';
+            keypad.style.right = 'auto'; keypad.style.bottom = 'auto';
+        };
 
-        const resizeKeypad = document.getElementById("resize-handle");
-        let isResizingK = false, startW, startH;
+        // RESIZE
+        let isResizeK = false, startWK, startHK;
         const startResizeK = (e) => {
-            if(keypad.classList.contains('minimized')) return;
-            isResizingK = true;
-            startX = e.clientX || e.touches[0].clientX;
-            startY = e.clientY || e.touches[0].clientY;
-            startW = parseInt(document.defaultView.getComputedStyle(keypad).width, 10);
-            startH = parseInt(document.defaultView.getComputedStyle(keypad).height, 10);
-            e.stopPropagation();
+            isResizeK = true;
+            startXK = e.clientX || e.touches[0].clientX;
+            startYK = e.clientY || e.touches[0].clientY;
+            startWK = parseInt(getComputedStyle(keypad).width);
+            startHK = parseInt(getComputedStyle(keypad).height);
+            e.stopPropagation(); e.preventDefault();
         };
-        const doResizeK = (e) => {
-            if (!isResizingK) return;
+
+        const moveResizeK = (e) => {
+            if(!isResizeK) return;
             e.preventDefault();
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            keypad.style.width = (startW + clientX - startX) + 'px';
-            keypad.style.height = (startH + clientY - startY) + 'px';
-        };
-        const stopResizeK = () => { if(isResizingK) saveConfig(); isResizingK = false; };
-
-        function saveConfig() {
-            if(keypad.classList.contains('minimized')) return;
-            localStorage.setItem("posTeclado", JSON.stringify({
-                left: keypad.style.left, top: keypad.style.top,
-                width: keypad.style.width, height: keypad.style.height
-            }));
-        }
-
-        window.resetTecladoPos = () => {
-            localStorage.removeItem("posTeclado");
-            keypad.style = "";
-            keypad.classList.remove('minimized');
-            document.getElementById('btn-min-max').innerHTML = '<i class="fa-solid fa-minus"></i>';
+            const cx = e.clientX || e.touches[0].clientX;
+            const cy = e.clientY || e.touches[0].clientY;
+            keypad.style.width = (startWK + cx - startXK) + 'px';
+            keypad.style.height = (startHK + cy - startYK) + 'px';
         };
 
-        window.toggleMinimize = () => {
-            keypad.classList.toggle('minimized');
-            const btn = document.getElementById('btn-min-max');
-            if(keypad.classList.contains('minimized')) {
-                btn.innerHTML = '<i class="fa-regular fa-window-maximize"></i>';
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        const stopAllK = () => {
+            if(isDragK || isResizeK) {
+                localStorage.setItem("posTeclado", JSON.stringify({
+                    left: keypad.style.left, top: keypad.style.top,
+                    width: keypad.style.width, height: keypad.style.height
+                }));
             }
+            isDragK = false; isResizeK = false;
         };
 
-        header.addEventListener('mousedown', startDrag); document.addEventListener('mousemove', doDrag); document.addEventListener('mouseup', stopDrag);
-        header.addEventListener('touchstart', startDrag); document.addEventListener('touchmove', doDrag); document.addEventListener('touchend', stopDrag);
-        resizeKeypad.addEventListener('mousedown', startResizeK); document.addEventListener('mousemove', doResizeK); document.addEventListener('mouseup', stopResizeK);
-        resizeKeypad.addEventListener('touchstart', startResizeK); document.addEventListener('touchmove', doResizeK); document.addEventListener('touchend', stopResizeK);
+        header.addEventListener('mousedown', startDragK); header.addEventListener('touchstart', startDragK, {passive:false});
+        resizerKey.addEventListener('mousedown', startResizeK); resizerKey.addEventListener('touchstart', startResizeK, {passive:false});
+        document.addEventListener('mousemove', (e) => { moveDragK(e); moveResizeK(e); });
+        document.addEventListener('touchmove', (e) => { moveDragK(e); moveResizeK(e); }, {passive:false});
+        document.addEventListener('mouseup', stopAllK); document.addEventListener('touchend', stopAllK);
 
-        // --- POS LOGICA ---
+        // --- POS LÓGICA ---
         window.renderizarPOS = () => {
             const grid = document.getElementById('grid-productos-pos');
             if(!grid) return;
@@ -469,15 +588,19 @@
             window.carrito.forEach((item, idx) => {
                 total += item.precio * item.cantidad;
                 count += item.cantidad;
-                lista.innerHTML += `<div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2" style="font-size:0.9rem">
-                    <div style="width:40%"><div class="fw-bold text-truncate">${item.nombre}</div><small class="text-muted">$${item.precio}</small></div>
-                    <div class="bg-light rounded border">
-                        <button class="btn btn-sm btn-ajuste text-danger fw-bold" onclick="modCant(${idx},-1)">-</button>
-                        <span class="mx-2 fw-bold">${item.cantidad}</span>
-                        <button class="btn btn-sm btn-ajuste text-success fw-bold" onclick="modCant(${idx},1)">+</button>
-                    </div>
-                    <div class="fw-bold text-end" style="width:20%">$${item.precio*item.cantidad}</div>
-                </div>`;
+                lista.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-2" style="font-size:0.9rem">
+                        <div style="width:40%">
+                            <div class="fw-bold text-truncate">${item.nombre}</div>
+                            <small class="text-muted">$${item.precio}</small>
+                        </div>
+                        <div class="bg-light rounded border">
+                            <button class="btn btn-sm btn-ajuste text-danger fw-bold" onclick="modCant(${idx},-1)">-</button>
+                            <span class="mx-2 fw-bold">${item.cantidad}</span>
+                            <button class="btn btn-sm btn-ajuste text-success fw-bold" onclick="modCant(${idx},1)">+</button>
+                        </div>
+                        <div class="fw-bold text-end" style="width:20%">$${item.precio*item.cantidad}</div>
+                    </div>`;
             });
 
             document.getElementById('items-count').innerText = count;
@@ -533,7 +656,7 @@
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        // --- CRUD PRODUCTOS ---
+        // --- CRUD PRODUCTOS (SORTABLE) ---
         window.cargarTablaProductos = () => {
             const b = document.getElementById('tabla-productos-body');
             if(!b) return;
@@ -568,7 +691,6 @@
         window.eliminarProductoDirecto = async (id) => { if(confirm('¿Borrar producto?')) { try { await deleteDoc(doc(db, "productos", id)); } catch(e) { alert(e.message); } } };
         window.abrirModalProducto = () => { window.editId = null; document.getElementById('prod-nombre').value = ''; document.getElementById('prod-precio').value = ''; document.getElementById('prod-color').value = '#2ecc71'; document.getElementById('btn-del-prod').style.display = 'none'; modal.show(); };
         window.editarProd = (id) => { const p = window.productos.find(x => x.id === id); window.editId = id; document.getElementById('prod-nombre').value = p.nombre; document.getElementById('prod-precio').value = p.precio; document.getElementById('prod-color').value = p.color; document.getElementById('btn-del-prod').style.display = 'block'; modal.show(); };
-        
         window.guardarProducto = async () => {
             const n = document.getElementById('prod-nombre').value;
             const pr = parseFloat(document.getElementById('prod-precio').value);
@@ -580,7 +702,6 @@
                 modal.hide();
             } catch (e) { alert("Error: " + e.message); }
         };
-        
         window.eliminarProducto = async () => { if(confirm('¿Eliminar?')) { try { await deleteDoc(doc(db, "productos", window.editId)); modal.hide(); } catch(e) { alert(e.message); } } };
         const modal = new bootstrap.Modal(document.getElementById('modalProducto'));
 
@@ -658,16 +779,7 @@
                 const idFila = prefijoId + '-' + v.id;
                 const itemsSafe = v.items || [];
                 const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>';
-                
-                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')">
-                    <td class="fw-bold text-secondary" style="width:20%">${hora}</td>
-                    <td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td>
-                    <td class="fw-bold text-end d-flex justify-content-end align-items-center">
-                        <span>$${(v.total||0)}</span>
-                        <button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>`;
-                
+                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span><button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
                 html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`;
                 if(itemsSafe.length > 0) {
                     html += '<ul class="list-group">';
@@ -688,7 +800,6 @@
             return html;
         }
 
-        // REPORTES GENERICOS
         window.cargarReporteDiario = () => {
             const hoyStr = window.fechaLocalCorta(new Date().toISOString());
             const ventasHoy = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === hoyStr);
@@ -704,37 +815,24 @@
             const fin = document.getElementById('filtro-fin').value;
             const div = document.getElementById('contenedor-historial');
             if(!ini || !fin) return;
-            
             const filtradas = window.ventas.filter(v => {
                 const f = window.fechaLocalCorta(v.fecha);
                 return f >= ini && f <= fin;
             });
-
             if(filtradas.length === 0) { div.innerHTML = '<div class="alert alert-light text-center border">No hay ventas.</div>'; return; }
-            
             const grupos = {};
             filtradas.forEach(v => {
                 const dia = window.fechaLocalCorta(v.fecha);
                 if(!grupos[dia]) grupos[dia] = [];
                 grupos[dia].push(v);
             });
-
             let html = '<div class="accordion">';
             Object.keys(grupos).sort().reverse().forEach(dia => {
                 const lista = grupos[dia];
                 const totalDia = lista.reduce((s, v) => s + (v.total || 0), 0);
                 const fechaTexto = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'});
                 const idCollapse = 'collapse-' + dia;
-                
-                html += `<div class="card mb-2 border-0 shadow-sm">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')">
-                        <div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div>
-                        <h5 class="mb-0 fw-bold text-success">$${totalDia}</h5>
-                    </div>
-                    <div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">
-                        ${generarHTMLTickets(lista, 'gen-' + dia)}
-                    </tbody></table></div></div>
-                </div>`;
+                html += `<div class="card mb-2 border-0 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')"><div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div><h5 class="mb-0 fw-bold text-success">$${totalDia}</h5></div><div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">${generarHTMLTickets(lista, 'gen-'+dia)}</tbody></table></div></div></div>`;
             });
             html += '</div>';
             div.innerHTML = html;
@@ -749,11 +847,7 @@
                 if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
             });
             if(window.chartDia) window.chartDia.destroy();
-            window.chartDia = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+            window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
         }
 
         window.descargarExcel = () => {
@@ -765,7 +859,6 @@
                 return f >= ini && f <= fin;
             });
             if(rep.length === 0) return alert("Sin datos");
-            
             const filas = [];
             rep.forEach(v => {
                 const itemsSafe = v.items || [];
@@ -775,7 +868,7 @@
                     filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 });
                 } else {
                     itemsSafe.forEach(i => {
-                        filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio * i.cantidad });
+                        filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad });
                     });
                 }
             });
