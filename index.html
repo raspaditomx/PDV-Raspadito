@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raspadito System v21 (No Bounce)</title>
+    <title>Raspadito System v24 (Auto-Reset)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,10 +24,8 @@
             touch-action: none;
         }
         
-        .navbar-custom { height: 50px; background-color: #212529; flex-shrink: 0; z-index: 100; }
+        .navbar-custom { height: 50px; background-color: #212529; flex-shrink: 0; z-index: 1030; } /* Ajustado a estándar Bootstrap */
         
-        /* CONTENEDOR PRINCIPAL */
-        /* NOTA: Se eliminó 'transition' para evitar el rebote */
         .main-container { 
             height: calc(100% - 50px); 
             margin-top: 50px; 
@@ -54,7 +52,6 @@
             touch-action: pan-y;
         }
         
-        /* RESIZER HORIZONTAL */
         .resizer-h { 
             width: 30px;
             margin-left: -15px; margin-right: -15px;
@@ -76,18 +73,15 @@
             border-left: 1px solid #ccc;
         }
 
-        /* RESIZER VERTICAL (EL DEL PROBLEMA) */
         .resizer-v { 
-            height: 30px; /* Zona de toque más amplia */
+            height: 30px; 
             margin-top: -15px; margin-bottom: -15px;
             position: relative; z-index: 50;
             cursor: row-resize; 
             display: flex; justify-content: center; align-items: center; 
-            touch-action: none; /* Vital para evitar scroll nativo */
+            touch-action: none; 
         }
-        /* Línea visual */
         .resizer-v::before { content: ""; position: absolute; top: 14px; left:0; right:0; height: 2px; background: #ccc; }
-        /* Grip visual */
         .resizer-v::after { 
             content: ""; display: block; width: 30px; height: 6px; 
             background: #e0e0e0; border: 1px solid #999; border-radius: 3px;
@@ -96,20 +90,20 @@
         
         .resizer-locked { cursor: default !important; opacity: 0.5; pointer-events: none; }
 
-        /* ELEMENTOS */
         .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; touch-action: pan-y; }
         .area-totales { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 15px; flex-shrink: 0; }
         .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; touch-action: manipulation; }
         .btn-producto:active { transform: scale(0.95); }
 
-        /* TECLADO FLOTANTE (SIN TRANSICIONES TAMPOCO) */
+        /* TECLADO FLOTANTE */
         #floating-keypad { 
             position: fixed; bottom: 20px; right: 20px; width: 320px; height: 480px; 
-            background: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; 
-            z-index: 9999; backdrop-filter: blur(5px); min-width: 200px; min-height: 40px; 
+            background: rgba(255, 255, 255, 0.98); border: 1px solid #ccc; border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; 
+            /* CORRECCIÓN Z-INDEX: 1040 es menor que el Offcanvas (1045) pero mayor que Navbar (1030) */
+            z-index: 1040; 
+            backdrop-filter: blur(8px); min-width: 200px; min-height: 40px; 
             container-type: size; touch-action: none;
-            /* transition: eliminada */
         }
         
         #keypad-header { 
@@ -121,19 +115,34 @@
         
         #keypad-body { flex-grow: 1; padding: 2cqh; display: flex; flex-direction: column; gap: 1cqh; }
         
-        .screen-keypad { text-align: right; background: #f8f9fa; padding: 2cqh; border-radius: 8px; border: 1px solid #dee2e6; display: flex; flex-direction: column; justify-content: center; height: 20%; }
-        .screen-input { font-size: 8cqh; font-weight: bold; color: #212529; line-height: 1; }
-        .screen-info { font-size: 3.5cqh; color: #6c757d; display: flex; justify-content: space-between; margin-top: 1cqh; }
-        .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1cqh; flex-grow: 1; }
-        .teclado-btn { width: 100%; height: 100%; font-size: 5cqh; font-weight: bold; border-radius: 8px; border: 1px solid #ced4da; background-color: white; display: flex; align-items: center; justify-content: center; padding: 0; }
-        .teclado-btn:active { background-color: #e2e6ea; }
-        #btn-cobrar-key { font-size: 5cqh; height: 15%; }
+        .screen-keypad { 
+            text-align: right; background: #f8f9fa; padding: 1.5cqh; 
+            border-radius: 12px; border: 1px solid #e9ecef; 
+            display: flex; flex-direction: column; justify-content: flex-end; 
+            height: 22%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
         
-        /* MANIJA TECLADO (RAYITAS) */
+        .screen-input { 
+            font-size: 8cqh; font-weight: bold; color: #212529; 
+            line-height: 1; flex-grow: 1; display: flex; align-items: flex-end; justify-content: flex-end;
+            margin-bottom: 0.5cqh;
+        }
+        
+        .screen-info { 
+            font-size: 3.5cqh; display: flex; justify-content: space-between; 
+            border-top: 1px solid #e0e0e0; padding-top: 0.8cqh; color: #6c757d;
+        }
+        
+        .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1cqh; flex-grow: 1; }
+        .teclado-btn { width: 100%; height: 100%; font-size: 5cqh; font-weight: bold; border-radius: 10px; border: 1px solid #ced4da; background-color: white; display: flex; align-items: center; justify-content: center; padding: 0; transition: background 0.1s; }
+        .teclado-btn:active { background-color: #e2e6ea; }
+        #btn-cobrar-key { font-size: 5cqh; height: 15%; border-radius: 10px; }
+        
+        /* MANIJA SUTIL */
         #resize-handle { 
-            width: 30px; height: 30px; position: absolute; bottom: 2px; right: 2px; cursor: nwse-resize; 
-            background: repeating-linear-gradient(135deg, transparent, transparent 2px, #888 2px, #888 4px);
-            clip-path: polygon(100% 0, 0% 100%, 100% 100%); z-index: 10; touch-action: none;
+            width: 15px; height: 15px; position: absolute; bottom: 5px; right: 5px; 
+            cursor: nwse-resize; z-index: 10; touch-action: none; opacity: 0.5;
+            background: repeating-linear-gradient(135deg, transparent, transparent 4px, #6c757d 4px, #6c757d 5px, transparent 5px, transparent 8px);
         }
 
         .handle-drag { cursor: grab; color: #6c757d; padding: 15px; font-size: 1.5rem; touch-action: none; }
@@ -141,12 +150,46 @@
         .fila-detalle { display: none; background-color: #fff; } 
         .fila-activa { display: table-row !important; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        #loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        
+        #loader-overlay, #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #212529; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        #loader-overlay { background: rgba(255,255,255,0.9); backdrop-filter: blur(5px); }
+        
+        .pin-pad { width: 300px; background: white; padding: 20px; border-radius: 15px; text-align: center; }
+        .pin-display { font-size: 2rem; letter-spacing: 10px; margin-bottom: 20px; height: 50px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; line-height: 50px; color: #212529; }
+        .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .pin-btn { height: 60px; font-size: 1.5rem; border-radius: 10px; border: 1px solid #ced4da; background: white; font-weight: bold; }
+        .pin-btn:active { background: #e9ecef; }
+        .hidden-worker { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="loader-overlay">
+    <div id="login-overlay">
+        <div class="text-white mb-4 text-center">
+            <h1><i class="fa-solid fa-store"></i> Raspadito</h1>
+            <p>Ingresa tu PIN</p>
+        </div>
+        <div class="pin-pad shadow">
+            <div class="pin-display" id="pin-display">****</div>
+            <div class="pin-grid">
+                <button class="pin-btn" onclick="addPin('1')">1</button>
+                <button class="pin-btn" onclick="addPin('2')">2</button>
+                <button class="pin-btn" onclick="addPin('3')">3</button>
+                <button class="pin-btn" onclick="addPin('4')">4</button>
+                <button class="pin-btn" onclick="addPin('5')">5</button>
+                <button class="pin-btn" onclick="addPin('6')">6</button>
+                <button class="pin-btn" onclick="addPin('7')">7</button>
+                <button class="pin-btn" onclick="addPin('8')">8</button>
+                <button class="pin-btn" onclick="addPin('9')">9</button>
+                <button class="pin-btn text-danger" onclick="clearPin()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="pin-btn" onclick="addPin('0')">0</button>
+                <button class="pin-btn text-success" onclick="checkPin()"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+        <p class="text-white-50 mt-4 small">v24.0 Auto-Reset</p>
+    </div>
+
+    <div id="loader-overlay" style="display:none;">
         <div class="text-center">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
             <p class="mt-2 fw-bold text-secondary">Conectando...</p>
@@ -160,7 +203,8 @@
         
         <span class="text-white fw-bold small" id="titulo-vista">Punto de Venta</span>
         
-        <div class="ms-auto d-flex">
+        <div class="ms-auto d-flex align-items-center">
+            <span id="role-badge" class="badge bg-danger me-2">ADMIN</span>
             <button class="btn btn-sm btn-outline-warning" id="btn-lock-layout" onclick="toggleLayoutLock()" title="Fijar Diseño">
                 <i class="fa-solid fa-lock-open"></i>
             </button>
@@ -176,20 +220,23 @@
             <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('pos')">
                 <i class="fa-solid fa-cash-register me-2"></i> Punto de Venta
             </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('productos')">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3 restricted" onclick="navegar('productos')">
                 <i class="fa-solid fa-tags me-2"></i> Inventario
             </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('diarias')">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3 restricted" onclick="navegar('diarias')">
                 <i class="fa-solid fa-chart-column me-2"></i> Reporte Diario
             </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('especificas')">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3 restricted" onclick="navegar('especificas')">
                 <i class="fa-solid fa-calendar-day me-2"></i> Ventas Específicas
             </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('generales')">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3 restricted" onclick="navegar('generales')">
                 <i class="fa-solid fa-calendar-days me-2"></i> Historial General
             </button>
-            <button class="list-group-item list-group-item-action bg-dark text-white p-3" onclick="navegar('exportar')">
+            <button class="list-group-item list-group-item-action bg-dark text-white p-3 restricted" onclick="navegar('exportar')">
                 <i class="fa-solid fa-file-excel me-2"></i> Exportar
+            </button>
+            <button class="list-group-item list-group-item-action bg-dark text-danger p-3 mt-5 border-top border-secondary" onclick="cerrarSesion()">
+                <i class="fa-solid fa-right-from-bracket me-2"></i> Cerrar Sesión
             </button>
         </div>
     </div>
@@ -198,10 +245,9 @@
         <div id="keypad-header">Teclado</div>
         <div id="keypad-body">
             <div class="screen-keypad">
-                <div class="text-muted small text-start" style="font-size:2.5cqh">Recibido:</div>
                 <div class="screen-input text-primary" id="keypad-input">-</div>
-                <div class="screen-info border-top pt-1" style="border-color:#ddd!important">
-                    <span id="keypad-total-info">Total: $0</span>
+                <div class="screen-info">
+                    <span id="keypad-total-info" class="text-muted fw-bold" style="opacity:0.7">$0</span>
                     <span class="fw-bold" id="keypad-cambio-info">Cambio: $0</span>
                 </div>
             </div>
@@ -328,6 +374,72 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- SISTEMA DE PIN ---
+        const PINS = {
+            '3525': 'admin',   // CAMBIA TU PIN DE ADMIN
+            '1111': 'worker'   // CAMBIA EL PIN DE EMPLEADO
+        };
+        
+        window.currentRole = null;
+        let currentPinInput = "";
+
+        window.addPin = (n) => {
+            if(currentPinInput.length < 4) {
+                currentPinInput += n;
+                updatePinDisplay();
+            }
+        };
+
+        window.clearPin = () => { currentPinInput = ""; updatePinDisplay(); };
+        
+        function updatePinDisplay() {
+            const el = document.getElementById('pin-display');
+            el.innerText = currentPinInput.split('').map(()=>'*').join('');
+        }
+
+        window.checkPin = () => {
+            const role = PINS[currentPinInput];
+            if(role) {
+                window.currentRole = role;
+                aplicarPermisos(role);
+                document.getElementById('login-overlay').style.display = 'none';
+                currentPinInput = ""; updatePinDisplay();
+                if(role === 'worker') navegar('pos');
+            } else {
+                alert("PIN Incorrecto");
+                window.clearPin();
+            }
+        };
+
+        // CORRECCIÓN: Limpieza automática al cerrar sesión
+        window.cerrarSesion = () => {
+            // 1. Limpiar variables de venta
+            window.carrito = [];
+            window.montoRecibido = "";
+            window.actualizarTicket();
+
+            // 2. Proceso normal de cierre
+            document.getElementById('login-overlay').style.display = 'flex';
+            window.currentRole = null;
+            document.querySelectorAll('.seccion-app').forEach(s => s.classList.remove('seccion-activa'));
+            bootstrap.Offcanvas.getInstance(document.getElementById('menuLateral')).hide();
+        };
+
+        function aplicarPermisos(role) {
+            const badge = document.getElementById('role-badge');
+            const restrictedItems = document.querySelectorAll('.restricted');
+            
+            if(role === 'admin') {
+                badge.className = 'badge bg-danger me-2';
+                badge.innerText = 'ADMIN';
+                restrictedItems.forEach(el => el.classList.remove('hidden-worker'));
+            } else {
+                badge.className = 'badge bg-success me-2';
+                badge.innerText = 'VENTA';
+                restrictedItems.forEach(el => el.classList.add('hidden-worker'));
+            }
+        }
+
         // ESTADO GLOBAL
         window.productos = [];
         window.ventas = [];
@@ -375,9 +487,16 @@
         };
 
         window.navegar = (vista) => {
+            if(window.currentRole === 'worker' && vista !== 'pos') {
+                return alert("Acceso restringido a Vendedores");
+            }
+
             document.querySelectorAll('.seccion-app').forEach(s => s.classList.remove('seccion-activa'));
             document.getElementById('vista-' + vista).classList.add('seccion-activa');
-            bootstrap.Offcanvas.getInstance(document.getElementById('menuLateral')).hide();
+            
+            const offcanvas = document.getElementById('menuLateral');
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+            if(bsOffcanvas) bsOffcanvas.hide();
             
             const titulos = { 
                 'pos': 'Punto de Venta', 'productos': 'Inventario', 
@@ -397,7 +516,7 @@
             if(vista === 'diarias') window.cargarReporteDiario();
         };
 
-        // --- RESIZABLE LAYOUT & TOUCH FIX ---
+        // --- RESIZABLE LAYOUT ---
         window.toggleLayoutLock = () => {
             window.isLayoutLocked = !window.isLayoutLocked;
             const btn = document.getElementById('btn-lock-layout');
@@ -422,7 +541,6 @@
         const panelTicket = document.querySelector('.panel-ticket');
         const mainContainer = document.getElementById('main-container');
 
-        // Manejo Horizontal
         let isResizingH = false;
         const startH = (e) => { 
             if(window.isLayoutLocked) return;
@@ -430,7 +548,6 @@
             e.preventDefault(); 
         };
         
-        // Manejo Vertical
         let isResizingV = false;
         const startV = (e) => { 
             if(window.isLayoutLocked) return;
@@ -440,14 +557,11 @@
 
         resizerH.addEventListener('mousedown', startH);
         resizerH.addEventListener('touchstart', startH, {passive: false});
-        
         resizerV.addEventListener('mousedown', startV);
         resizerV.addEventListener('touchstart', startV, {passive: false});
 
         const handleMove = (e) => {
             if(!isResizingH && !isResizingV) return;
-            
-            // Obtener coordenadas (Mouse o Touch)
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
@@ -461,7 +575,6 @@
             if(isResizingV && clientY) {
                 e.preventDefault();
                 const newHeight = clientY - 50;
-                // Permite estirar hasta abajo sin limite de '100vh'
                 if(newHeight > 300) {
                     mainContainer.style.height = newHeight + 'px';
                 }
@@ -475,7 +588,7 @@
         document.addEventListener('mouseup', handleEnd);
         document.addEventListener('touchend', handleEnd);
 
-        // --- TECLADO FLOTANTE (DRAG & RESIZE) ---
+        // --- TECLADO FLOTANTE ---
         const keypad = document.getElementById("floating-keypad");
         const header = document.getElementById("keypad-header");
         const resizerKey = document.getElementById("resize-handle");
@@ -486,7 +599,6 @@
             keypad.style.width = savedPos.width; keypad.style.height = savedPos.height;
         }
 
-        // DRAG
         let isDragK = false, startXK, startYK, initLeftK, initTopK;
         const startDragK = (e) => {
             isDragK = true;
@@ -507,7 +619,6 @@
             keypad.style.right = 'auto'; keypad.style.bottom = 'auto';
         };
 
-        // RESIZE
         let isResizeK = false, startWK, startHK;
         const startResizeK = (e) => {
             isResizeK = true;
@@ -605,7 +716,7 @@
 
             document.getElementById('items-count').innerText = count;
             document.getElementById('txt-total').innerText = '$' + total;
-            document.getElementById('keypad-total-info').innerText = 'Total: $' + total;
+            document.getElementById('keypad-total-info').innerText = '$' + total;
 
             const rec = parseInt(window.montoRecibido || 0);
             const lblRec = window.montoRecibido ? '$' + rec : '-';
@@ -644,7 +755,8 @@
                     fecha: new Date().toISOString(),
                     items: window.carrito,
                     total: total,
-                    pago: pago
+                    pago: pago,
+                    vendedor: window.currentRole 
                 });
                 window.carrito = [];
                 window.montoRecibido = "";
@@ -656,25 +768,29 @@
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        // --- CRUD PRODUCTOS (SORTABLE) ---
+        // --- CRUD PRODUCTOS ---
         window.cargarTablaProductos = () => {
             const b = document.getElementById('tabla-productos-body');
             if(!b) return;
             b.innerHTML = '';
             window.productos.forEach(p => {
+                const btns = window.currentRole === 'admin' ? 
+                    `<button class="btn btn-sm btn-light border me-1" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+                     <button class="btn btn-sm btn-outline-danger border" onclick="eliminarProductoDirecto('${p.id}')"><i class="fa-solid fa-trash"></i></button>` 
+                    : '<span class="text-muted small">Sólo Admin</span>';
+
                 b.innerHTML += `<tr data-id="${p.id}">
                     <td class="handle-drag"><i class="fa-solid fa-grip-vertical"></i></td>
                     <td><div style="width:25px;height:25px;background:${p.color};border-radius:50%"></div></td>
                     <td>${p.nombre}</td>
                     <td>$${p.precio}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-light border me-1" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-sm btn-outline-danger border" onclick="eliminarProductoDirecto('${p.id}')"><i class="fa-solid fa-trash"></i></button>
-                    </td>
+                    <td class="text-end">${btns}</td>
                 </tr>`;
             });
             if(b.sortableInstance) b.sortableInstance.destroy();
-            b.sortableInstance = new Sortable(b, { handle: '.handle-drag', animation: 150, onEnd: function() { actualizarOrdenProductos(); } });
+            if(window.currentRole === 'admin') {
+                b.sortableInstance = new Sortable(b, { handle: '.handle-drag', animation: 150, onEnd: function() { actualizarOrdenProductos(); } });
+            }
         };
 
         async function actualizarOrdenProductos() {
@@ -705,14 +821,12 @@
         window.eliminarProducto = async () => { if(confirm('¿Eliminar?')) { try { await deleteDoc(doc(db, "productos", window.editId)); modal.hide(); } catch(e) { alert(e.message); } } };
         const modal = new bootstrap.Modal(document.getElementById('modalProducto'));
 
-        // --- VENTAS ESPECÍFICAS ---
+        // --- HISTORIAL & REPORTES ---
         window.cargarVentasEspecificas = () => {
             const fechaInput = document.getElementById('filtro-dia-especifico').value;
             if(!fechaInput) return;
-            
             const ventasDia = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === fechaInput);
             document.getElementById('contenido-especifico').style.display = 'block';
-            
             const totalDinero = ventasDia.reduce((sum, v) => sum + (v.total || 0), 0);
             document.getElementById('total-dia-esp').innerText = '$' + totalDinero;
             document.getElementById('titulo-dia-esp').innerText = 'Resumen: ' + new Date(fechaInput + 'T12:00:00').toLocaleDateString();
@@ -724,24 +838,11 @@
                 const h = new Date(v.fecha).getHours();
                 if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
             });
-            
             if(window.chartEsp) window.chartEsp.destroy();
-            window.chartEsp = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#198754', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+            window.chartEsp = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#198754', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
 
             const resumenProductos = {};
-            ventasDia.forEach(v => {
-                (v.items || []).forEach(item => {
-                    const n = item.nombre || "Desc";
-                    if(!resumenProductos[n]) resumenProductos[n] = { cant: 0, total: 0 };
-                    resumenProductos[n].cant += (item.cantidad || 0);
-                    resumenProductos[n].total += (item.precio * item.cantidad);
-                });
-            });
-
+            ventasDia.forEach(v => { (v.items || []).forEach(item => { const n = item.nombre || "Desc"; if(!resumenProductos[n]) resumenProductos[n] = { cant: 0, total: 0 }; resumenProductos[n].cant += (item.cantidad || 0); resumenProductos[n].total += (item.precio * item.cantidad); }); });
             const ranking = Object.keys(resumenProductos).map(key => ({ nombre: key, ...resumenProductos[key] })).sort((a, b) => b.cant - a.cant);
             const tbody = document.getElementById('tabla-productos-esp');
             tbody.innerHTML = '';
@@ -749,7 +850,6 @@
             else ranking.forEach(p => { tbody.innerHTML += `<tr><td>${p.nombre}</td><td class="text-center fw-bold">${p.cant}</td><td class="text-end text-success">$${p.total}</td></tr>`; });
         };
 
-        // --- HISTORIAL ---
         window.eliminarTicket = async (idVenta) => { if(confirm("¿Eliminar ticket?")) try { await deleteDoc(doc(db, "ventas", idVenta)); } catch(e){alert(e.message);} };
         window.toggleDetalle = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('fila-activa'); };
         window.toggleCollapse = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('show'); };
@@ -779,22 +879,18 @@
                 const idFila = prefijoId + '-' + v.id;
                 const itemsSafe = v.items || [];
                 const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>';
-                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span><button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                const btnEliminar = window.currentRole === 'admin' ? `<button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
+                html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span>${btnEliminar}</td></tr>`;
                 html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`;
-                if(itemsSafe.length > 0) {
-                    html += '<ul class="list-group">';
-                    itemsSafe.forEach((item, idxItem) => {
-                        html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2">
-                            <span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span>
-                            <div>
-                                <button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button>
-                                <span class="fw-bold">${(item.cantidad||0)}</span>
-                                <button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button>
-                            </div>
-                        </li>`;
-                    });
-                    html += '</ul>';
-                } else { html += '<p class="text-muted small">Ticket no editable.</p>'; }
+                if(window.currentRole === 'admin') {
+                    if(itemsSafe.length > 0) {
+                        html += '<ul class="list-group">';
+                        itemsSafe.forEach((item, idxItem) => {
+                            html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span><div><button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button><span class="fw-bold">${(item.cantidad||0)}</span><button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button></div></li>`;
+                        });
+                        html += '</ul>';
+                    } else { html += '<p class="text-muted small">Ticket no editable.</p>'; }
+                } else { html += '<p class="text-muted small fst-italic">Solo Admin puede editar ventas pasadas.</p>'; }
                 html += '</div></td></tr>';
             });
             return html;
@@ -807,7 +903,13 @@
             document.getElementById('reporte-total-hoy').innerText = '$' + total;
             document.getElementById('reporte-conteo-hoy').innerText = ventasHoy.length;
             document.getElementById('tbody-ventas-hoy').innerHTML = generarHTMLTickets(ventasHoy, 'dia');
-            generarGraficaHoras(ventasHoy);
+            
+            const ctx = document.getElementById('graficoDia');
+            const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"];
+            const data = Array(12).fill(0);
+            ventasHoy.forEach(v => { const h = new Date(v.fecha).getHours(); if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); } });
+            if(window.chartDia) window.chartDia.destroy();
+            window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
         };
 
         window.cargarReporteGeneral = () => {
@@ -815,17 +917,10 @@
             const fin = document.getElementById('filtro-fin').value;
             const div = document.getElementById('contenedor-historial');
             if(!ini || !fin) return;
-            const filtradas = window.ventas.filter(v => {
-                const f = window.fechaLocalCorta(v.fecha);
-                return f >= ini && f <= fin;
-            });
+            const filtradas = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; });
             if(filtradas.length === 0) { div.innerHTML = '<div class="alert alert-light text-center border">No hay ventas.</div>'; return; }
             const grupos = {};
-            filtradas.forEach(v => {
-                const dia = window.fechaLocalCorta(v.fecha);
-                if(!grupos[dia]) grupos[dia] = [];
-                grupos[dia].push(v);
-            });
+            filtradas.forEach(v => { const dia = window.fechaLocalCorta(v.fecha); if(!grupos[dia]) grupos[dia] = []; grupos[dia].push(v); });
             let html = '<div class="accordion">';
             Object.keys(grupos).sort().reverse().forEach(dia => {
                 const lista = grupos[dia];
@@ -838,39 +933,20 @@
             div.innerHTML = html;
         };
 
-        function generarGraficaHoras(datos) {
-            const ctx = document.getElementById('graficoDia');
-            const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"];
-            const data = Array(12).fill(0);
-            datos.forEach(v => {
-                const h = new Date(v.fecha).getHours();
-                if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); }
-            });
-            if(window.chartDia) window.chartDia.destroy();
-            window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
-        }
-
         window.descargarExcel = () => {
             const ini = document.getElementById('exp-inicio').value;
             const fin = document.getElementById('exp-fin').value;
             if(!ini || !fin) return alert("Selecciona fechas");
-            const rep = window.ventas.filter(v => {
-                const f = window.fechaLocalCorta(v.fecha);
-                return f >= ini && f <= fin;
-            });
+            const rep = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; });
             if(rep.length === 0) return alert("Sin datos");
             const filas = [];
             rep.forEach(v => {
                 const itemsSafe = v.items || [];
                 const fechaLocal = new Date(v.fecha).toLocaleDateString();
                 const horaLocal = new Date(v.fecha).toLocaleTimeString();
-                if(itemsSafe.length === 0) {
-                    filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 });
-                } else {
-                    itemsSafe.forEach(i => {
-                        filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad });
-                    });
-                }
+                const vendedor = v.vendedor ? (v.vendedor === 'admin' ? 'Admin' : 'Empleado') : 'N/A';
+                if(itemsSafe.length === 0) { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Vendedor": vendedor, "Prod": "BORRADO", "Total": 0 }); } 
+                else { itemsSafe.forEach(i => { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Vendedor": vendedor, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad }); }); }
             });
             const ws = XLSX.utils.json_to_sheet(filas);
             const wb = XLSX.utils.book_new();
