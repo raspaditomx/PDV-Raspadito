@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raspadito System v31 (Visual Feedback)</title>
+    <title>Raspadito System v32 (Clean Mobile)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -86,7 +86,6 @@
         .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; touch-action: pan-y; }
         .area-totales { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 15px; flex-shrink: 0; }
         
-        /* BOTONES PRODUCTOS CON BADGE */
         .btn-producto { 
             height: 100px; 
             width: 100%; 
@@ -103,7 +102,7 @@
         .btn-producto:active { transform: scale(0.95); }
         .btn-producto span.small { font-size: 0.8rem; line-height: 1.1; text-align: center; margin-bottom: 4px; padding: 0 4px; }
 
-        /* BURBUJA DE CANTIDAD (NUEVO) */
+        /* BURBUJA DE CANTIDAD */
         .qty-badge {
             position: absolute;
             top: -8px; right: -8px;
@@ -115,7 +114,7 @@
             font-size: 0.9rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             z-index: 10;
-            border: 2px solid #e9ecef; /* Borde para separar visualmente */
+            border: 2px solid #e9ecef;
         }
 
         /* TECLADO FLOTANTE (PC) */
@@ -182,15 +181,14 @@
         .pin-btn:active { background: #e9ecef; }
         .hidden-worker { display: none !important; }
 
-        /* --- MOBILE TABS (MEJORADO) --- */
+        /* --- MOBILE TABS --- */
         .mobile-tabs-container {
             display: none; 
             position: fixed; bottom: 0; left: 0; right: 0;
-            height: 65px; /* Un poco más alto */
-            background: white; 
+            height: 65px; background: white; 
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             z-index: 2000;
-            padding-bottom: 5px; /* Espacio para gestos en iPhone */
+            padding-bottom: 5px;
         }
         .tab-btn {
             flex: 1; display: flex; flex-direction: column; 
@@ -201,20 +199,14 @@
         .tab-btn.active { color: #0d6efd; font-weight: bold; background-color: #f8f9fa; }
         .tab-btn i { font-size: 1.4rem; margin-bottom: 4px; }
         
-        /* Badge en el tab de cobrar */
-        .tab-badge {
-            background: #198754; color: white; 
-            padding: 2px 8px; border-radius: 10px; 
-            font-size: 0.8rem; margin-left: 5px;
-        }
+        .tab-badge { background: #198754; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px; }
 
-        /* --- RESPONSIVE LOGIC (LA MAGIA) --- */
+        /* --- RESPONSIVE LOGIC --- */
         @media (max-width: 768px) {
             .mobile-tabs-container { display: flex; }
             .pos-split-container { display: block; }
             .resizer-h { display: none !important; }
             
-            /* Paneles ocupan todo el espacio menos los tabs */
             .panel-productos, .panel-ticket { 
                 width: 100% !important; 
                 height: calc(100% - 65px) !important; 
@@ -225,31 +217,27 @@
             .show-mobile { display: block !important; }
             .show-mobile-flex { display: flex !important; }
 
-            /* MODO TICKET MÓVIL: PANTALLA DIVIDIDA INTERNA */
-            /* El panel ticket ahora usa Flex Column para apilar Lista y Teclado */
             #panel-ticket.show-mobile-flex {
                 flex-direction: column;
                 justify-content: space-between;
                 background-color: #f8f9fa;
             }
 
-            /* Lista de tickets: Ocupa la mitad superior */
             #ticket-lista {
-                flex-grow: 1; /* Crece para llenar espacio */
-                height: 40%; /* Base */
+                flex-grow: 1; 
+                height: 40%; 
                 overflow-y: auto;
                 border-bottom: 1px solid #ccc;
             }
             
-            /* Área de totales pequeña */
-            .area-totales { padding: 5px 15px; font-size: 0.9rem; }
-            .area-totales h3 { font-size: 1.2rem; margin: 0; }
+            /* OCULTAMOS EL AREA DE TOTALES REDUNDANTE EN MÓVIL */
+            .area-totales { display: none !important; }
 
-            /* TECLADO MÓVIL EMPOTRADO (DOCKED) */
+            /* TECLADO MÓVIL EMPOTRADO */
             #floating-keypad {
-                position: relative !important; /* Ya no flota */
+                position: relative !important;
                 width: 100% !important;
-                height: 55% !important; /* Ocupa la mitad inferior */
+                height: 55% !important; 
                 left: auto !important; bottom: auto !important; right: auto !important; top: auto !important;
                 border-radius: 0 !important;
                 box-shadow: none !important;
@@ -258,8 +246,7 @@
                 z-index: 1;
             }
             
-            /* Ajustes finos para el teclado empotrado */
-            #keypad-header { display: none; } /* No necesitamos moverlo */
+            #keypad-header { display: none; }
             #resize-handle { display: none; }
             #keypad-body { padding: 5px; }
             .screen-keypad { height: 18%; padding: 5px; } 
@@ -294,7 +281,7 @@
                 <button class="pin-btn text-success" onclick="checkPin()"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
-        <p class="text-white-50 mt-4 small">v31.0 Visual Feedback</p>
+        <p class="text-white-50 mt-4 small">v32.0 Clean Mobile</p>
     </div>
 
     <div id="loader-overlay" style="display:none;">
@@ -376,7 +363,7 @@
                             <span id="txt-cambio-main">Cambio: $0</span>
                         </div>
                     </div>
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -494,7 +481,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const PINS = { '3525': 'admin', '1111': 'worker' };
+        const PINS = { '2580': 'admin', '1379': 'worker' };
         window.currentRole = null;
         let currentPinInput = "";
 
@@ -532,7 +519,6 @@
             }
         }
 
-        // TABS MÓVILES
         window.switchMobileTab = (tab) => {
             const pProd = document.getElementById('panel-productos');
             const pTicket = document.getElementById('panel-ticket');
@@ -545,14 +531,13 @@
                 pTicket.classList.remove('show-mobile-flex');
                 btnProd.classList.add('active');
                 btnTicket.classList.remove('active');
-                keypad.classList.add('keypad-hidden-mobile'); // OCULTAR TECLADO
+                keypad.classList.add('keypad-hidden-mobile');
             } else {
                 pProd.classList.remove('show-mobile');
                 pTicket.classList.add('show-mobile-flex');
                 btnProd.classList.remove('active');
                 btnTicket.classList.add('active');
                 
-                // MOVER TECLADO AL PANEL DE TICKET (DOCKING)
                 if(window.innerWidth <= 768) {
                     pTicket.appendChild(keypad);
                     keypad.classList.remove('keypad-hidden-mobile');
@@ -562,7 +547,6 @@
 
         window.switchMobileTab('prod');
 
-        // ESTADO
         window.productos = []; window.ventas = []; window.carrito = []; window.montoRecibido = "";
         window.chartDia = null; window.chartEsp = null; window.editId = null; window.isLayoutLocked = false;
 
@@ -615,7 +599,6 @@
 
             if (vista === 'pos') {
                 keypad.style.display = 'flex';
-                // Reset teclado a body si estaba dockeado
                 document.body.appendChild(keypad);
                 window.switchMobileTab('prod'); 
                 if(window.innerWidth <= 768) mobileTabs.style.display = 'flex';
@@ -628,7 +611,6 @@
             if(vista === 'diarias') window.cargarReporteDiario();
         };
 
-        // RESIZERS
         window.toggleLayoutLock = () => {
             window.isLayoutLocked = !window.isLayoutLocked;
             const btn = document.getElementById('btn-lock-layout');
@@ -660,7 +642,6 @@
         document.addEventListener('mousemove', handleMove); document.addEventListener('touchmove', handleMove, {passive: false});
         document.addEventListener('mouseup', handleEnd); document.addEventListener('touchend', handleEnd);
 
-        // TECLADO DRAG (SOLO PC)
         const keypad = document.getElementById("floating-keypad");
         const header = document.getElementById("keypad-header");
         const resizerKey = document.getElementById("resize-handle");
@@ -686,14 +667,12 @@
         document.addEventListener('touchmove', (e) => { moveDragK(e); moveResizeK(e); }, {passive:false});
         document.addEventListener('mouseup', stopAllK); document.addEventListener('touchend', stopAllK);
 
-        // --- POS LÓGICA CON VISUAL FEEDBACK ---
         window.renderizarPOS = () => {
             const grid = document.getElementById('grid-productos-pos');
             if(!grid) return;
             grid.innerHTML = '';
             
             window.productos.forEach(p => {
-                // Verificar si está en carrito
                 const itemEnCarrito = window.carrito.find(i => i.id === p.id);
                 const badgeHTML = itemEnCarrito ? `<div class="qty-badge">${itemEnCarrito.cantidad}</div>` : '';
 
@@ -728,7 +707,6 @@
         };
 
         window.actualizarTicket = () => {
-            // Refrescar badges del grid
             window.renderizarPOS();
 
             const lista = document.getElementById('ticket-lista');
@@ -756,7 +734,7 @@
 
             document.getElementById('items-count').innerText = count;
             document.getElementById('txt-total').innerText = '$' + total;
-            document.getElementById('keypad-total-info').innerText = '$' + total;
+            document.getElementById('keypad-total-info').innerText = 'Total: $' + total;
             
             const badgeMobile = document.getElementById('tab-total-badge');
             if(badgeMobile) badgeMobile.innerText = '$' + total;
@@ -811,7 +789,6 @@
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        // RESTO DEL CÓDIGO (CRUD PRODUCTOS, REPORTES, ETC - SIN CAMBIOS)
         window.cargarTablaProductos = () => { const b = document.getElementById('tabla-productos-body'); if(!b) return; b.innerHTML = ''; window.productos.forEach(p => { b.innerHTML += `<tr data-id="${p.id}"><td class="handle-drag"><i class="fa-solid fa-grip-vertical"></i></td><td><div style="width:25px;height:25px;background:${p.color};border-radius:50%"></div></td><td>${p.nombre}</td><td>$${p.precio}</td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editarProd('${p.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-danger border" onclick="eliminarProductoDirecto('${p.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; }); if(b.sortableInstance) b.sortableInstance.destroy(); b.sortableInstance = new Sortable(b, { handle: '.handle-drag', animation: 150, onEnd: function() { actualizarOrdenProductos(); } }); };
         async function actualizarOrdenProductos() { const rows = document.querySelectorAll('#tabla-productos-body tr'); const batch = writeBatch(db); rows.forEach((row, index) => { const id = row.getAttribute('data-id'); const ref = doc(db, "productos", id); batch.update(ref, { orden: index }); }); try { await batch.commit(); } catch(e) { console.error(e); } }
         window.eliminarProductoDirecto = async (id) => { if(confirm('¿Borrar producto?')) { try { await deleteDoc(doc(db, "productos", id)); } catch(e) { alert(e.message); } } };
@@ -825,11 +802,11 @@
         window.toggleDetalle = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('fila-activa'); };
         window.toggleCollapse = (id) => { const el = document.getElementById(id); if(el) el.classList.toggle('show'); };
         window.modificarVentaPasada = async (idVenta, idxItem, cambio) => { const venta = window.ventas.find(v => v.id === idVenta); if(!venta) return; const nuevosItems = [...venta.items]; const item = nuevosItems[idxItem]; item.cantidad += cambio; if(item.cantidad <= 0) nuevosItems.splice(idxItem, 1); try { if(nuevosItems.length === 0) await deleteDoc(doc(db, "ventas", idVenta)); else { const nuevoTotal = nuevosItems.reduce((sum, i) => sum + (i.precio * i.cantidad), 0); await updateDoc(doc(db, "ventas", idVenta), { items: nuevosItems, total: nuevoTotal }); } } catch(e) { alert(e.message); } };
-        function generarHTMLTickets(listaVentas, prefijoId) { if(!listaVentas || listaVentas.length === 0) return '<tr><td colspan="3" class="text-center text-muted p-3">Sin ventas</td></tr>'; let html = ''; const listaOrdenada = listaVentas.sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).reverse(); listaOrdenada.forEach(v => { const fechaObj = new Date(v.fecha); const hora = fechaObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const idFila = prefijoId + '-' + v.id; const itemsSafe = v.items || []; const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>'; html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span><button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`; if(itemsSafe.length > 0) { html += '<ul class="list-group">'; itemsSafe.forEach((item, idxItem) => { html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span><div><button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button><span class="fw-bold">${(item.cantidad||0)}</span><button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button></div></li>`; }); html += '</ul>'; } else { html += '<p class="text-muted small">Ticket no editable.</p>'; } html += '</div></td></tr>'; }); return html; }
+        function generarHTMLTickets(listaVentas, prefijoId) { if(!listaVentas || listaVentas.length === 0) return '<tr><td colspan="3" class="text-center text-muted p-3">Sin ventas</td></tr>'; let html = ''; const listaOrdenada = listaVentas.sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).reverse(); listaOrdenada.forEach(v => { const fechaObj = new Date(v.fecha); const hora = fechaObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const idFila = prefijoId + '-' + v.id; const itemsSafe = v.items || []; const resumen = itemsSafe.length > 0 ? itemsSafe.map(i => (i.cantidad || 0) + 'x ' + (i.nombre || '???')).join(', ') : '<span class="text-danger">Datos antiguos</span>'; const btnEliminar = window.currentRole === 'admin' ? `<button class="btn btn-outline-danger btn-sm ms-3 py-0 px-2" onclick="event.stopPropagation(); eliminarTicket('${v.id}')"><i class="fa-solid fa-trash"></i></button>` : ''; html += `<tr class="cursor-pointer bg-white border-bottom" onclick="toggleDetalle('${idFila}')"><td class="fw-bold text-secondary" style="width:20%">${hora}</td><td class="small text-muted text-truncate" style="max-width:150px">${resumen}</td><td class="fw-bold text-end d-flex justify-content-end align-items-center"><span>$${(v.total||0)}</span>${btnEliminar}</td></tr>`; html += `<tr id="${idFila}" class="fila-detalle"><td colspan="3" class="p-0 bg-light"><div class="p-3 border-bottom"><p class="small fw-bold mb-2 text-primary">Editar Productos:</p>`; if(window.currentRole === 'admin') { if(itemsSafe.length > 0) { html += '<ul class="list-group">'; itemsSafe.forEach((item, idxItem) => { html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><span>${(item.nombre||"?")} <small class="text-muted">($${(item.precio||0)})</small></span><div><button class="btn btn-outline-danger btn-sm py-0 px-2 me-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, -1)">-</button><span class="fw-bold">${(item.cantidad||0)}</span><button class="btn btn-outline-success btn-sm py-0 px-2 ms-2" onclick="modificarVentaPasada('${v.id}', ${idxItem}, 1)">+</button></div></li>`; }); html += '</ul>'; } else { html += '<p class="text-muted small">Ticket no editable.</p>'; } } else { html += '<p class="text-muted small fst-italic">Solo Admin puede editar ventas pasadas.</p>'; } html += '</div></td></tr>'; }); return html; }
         window.cargarReporteDiario = () => { const hoyStr = window.fechaLocalCorta(new Date().toISOString()); const ventasHoy = window.ventas.filter(v => window.fechaLocalCorta(v.fecha) === hoyStr); const total = ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0); document.getElementById('reporte-total-hoy').innerText = '$' + total; document.getElementById('reporte-conteo-hoy').innerText = ventasHoy.length; document.getElementById('tbody-ventas-hoy').innerHTML = generarHTMLTickets(ventasHoy, 'dia'); generarGraficaHoras(ventasHoy); };
         window.cargarReporteGeneral = () => { const ini = document.getElementById('filtro-inicio').value; const fin = document.getElementById('filtro-fin').value; const div = document.getElementById('contenedor-historial'); if(!ini || !fin) return; const filtradas = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; }); if(filtradas.length === 0) { div.innerHTML = '<div class="alert alert-light text-center border">No hay ventas.</div>'; return; } const grupos = {}; filtradas.forEach(v => { const dia = window.fechaLocalCorta(v.fecha); if(!grupos[dia]) grupos[dia] = []; grupos[dia].push(v); }); let html = '<div class="accordion">'; Object.keys(grupos).sort().reverse().forEach(dia => { const lista = grupos[dia]; const totalDia = lista.reduce((s, v) => s + (v.total || 0), 0); const fechaTexto = new Date(dia + 'T12:00:00').toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'}); const idCollapse = 'collapse-' + dia; html += `<div class="card mb-2 border-0 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3 cursor-pointer dia-header" onclick="toggleCollapse('${idCollapse}')"><div><h6 class="mb-0 fw-bold text-uppercase">${fechaTexto}</h6><small class="text-muted">${lista.length} tickets</small></div><h5 class="mb-0 fw-bold text-success">$${totalDia}</h5></div><div id="${idCollapse}" class="collapse"><div class="card-body p-0"><table class="table mb-0"><tbody class="bg-light">${generarHTMLTickets(lista, 'gen-'+dia)}</tbody></table></div></div></div>`; }); html += '</div>'; div.innerHTML = html; };
         function generarGraficaHoras(datos) { const ctx = document.getElementById('graficoDia'); const labels = ["12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"]; const data = Array(12).fill(0); datos.forEach(v => { const h = new Date(v.fecha).getHours(); if(h >= 12) { const idx = h - 12; if(idx < 12) data[idx] += (v.total || 0); } }); if(window.chartDia) window.chartDia.destroy(); window.chartDia = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Venta ($)', data: data, backgroundColor: '#0d6efd', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } }); }
-        window.descargarExcel = () => { const ini = document.getElementById('exp-inicio').value; const fin = document.getElementById('exp-fin').value; if(!ini || !fin) return alert("Selecciona fechas"); const rep = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; }); if(rep.length === 0) return alert("Sin datos"); const filas = []; rep.forEach(v => { const itemsSafe = v.items || []; const fechaLocal = new Date(v.fecha).toLocaleDateString(); const horaLocal = new Date(v.fecha).toLocaleTimeString(); if(itemsSafe.length === 0) { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": "BORRADO", "Total": 0 }); } else { itemsSafe.forEach(i => { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad }); }); } }); const ws = XLSX.utils.json_to_sheet(filas); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ventas"); XLSX.writeFile(wb, `Ventas_${ini}_${fin}.xlsx`); };
+        window.descargarExcel = () => { const ini = document.getElementById('exp-inicio').value; const fin = document.getElementById('exp-fin').value; if(!ini || !fin) return alert("Selecciona fechas"); const rep = window.ventas.filter(v => { const f = window.fechaLocalCorta(v.fecha); return f >= ini && f <= fin; }); if(rep.length === 0) return alert("Sin datos"); const filas = []; rep.forEach(v => { const itemsSafe = v.items || []; const fechaLocal = new Date(v.fecha).toLocaleDateString(); const horaLocal = new Date(v.fecha).toLocaleTimeString(); const vendedor = v.vendedor ? (v.vendedor === 'admin' ? 'Admin' : 'Empleado') : 'N/A'; if(itemsSafe.length === 0) { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Vendedor": vendedor, "Prod": "BORRADO", "Total": 0 }); } else { itemsSafe.forEach(i => { filas.push({ "ID": v.id, "Fecha": fechaLocal, "Hora": horaLocal, "Vendedor": vendedor, "Prod": i.nombre, "Precio": i.precio, "Cant": i.cantidad, "Total": i.precio*i.cantidad }); }); } }); const ws = XLSX.utils.json_to_sheet(filas); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ventas"); XLSX.writeFile(wb, `Ventas_${ini}_${fin}.xlsx`); };
         const hoy = window.fechaLocalCorta(new Date().toISOString()); document.querySelectorAll('input[type="date"]').forEach(i => i.value = hoy);
     </script>
 </body>
