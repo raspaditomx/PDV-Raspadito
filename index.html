@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raspadito System v27 (Full Height)</title>
+    <title>Raspadito System v28 (Smart Grid)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -34,39 +34,50 @@
             overflow: hidden;
         }
         
-        /* Padding general para listas largas */
+        /* PANELES */
         .seccion-app { display: none; width: 100%; height: 100%; overflow-y: auto; padding-bottom: 100px; touch-action: pan-y; }
-        
-        /* CORRECCIÓN: El POS no debe tener padding abajo para usar toda la pantalla */
         #vista-pos.seccion-app { padding-bottom: 0 !important; display: none; flex-direction: column; overflow: hidden; }
         .seccion-activa { display: block !important; }
         #vista-pos.seccion-activa { display: flex !important; }
 
-        .pos-split-container { display: flex; flex-grow: 1; overflow: hidden; height: 100%; }
+        .pos-split-container { display: flex; flex-grow: 1; overflow: hidden; height: 100%; position: relative; }
 
         .panel-productos { 
             flex-grow: 1; 
             overflow-y: auto; 
             padding: 10px; 
             background-color: #e9ecef; 
-            min-width: 200px;
+            min-width: 150px; /* Mínimo para que no desaparezca */
             touch-action: pan-y;
         }
         
-        /* RESIZER HORIZONTAL (Sigue siendo útil) */
+        /* GRID INTELIGENTE (CSS GRID) */
+        #grid-productos-pos {
+            display: grid;
+            /* Aquí está la magia: rellena con tantos botones de mín. 100px como quepan */
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); 
+            gap: 8px;
+            width: 100%;
+        }
+
+        /* RESIZER HORIZONTAL (CORREGIDO) */
         .resizer-h { 
-            width: 30px;
-            margin-left: -15px; margin-right: -15px;
-            position: relative; z-index: 50;
+            width: 30px; /* Zona de agarre ancha */
+            margin-left: -15px; margin-right: -15px; /* Centrado invisible */
+            position: relative; 
+            z-index: 9999; /* Z-INDEX EXTREMO: SIEMPRE ENCIMA DE LOS BOTONES */
             cursor: col-resize; 
             display: flex; justify-content: center; align-items: center; 
             touch-action: none;
+            background: transparent; /* Invisible, solo se ve la línea */
         }
-        .resizer-h::before { content: ""; position: absolute; left: 14px; top:0; bottom:0; width: 2px; background: #ccc; }
+        /* La línea visual */
+        .resizer-h::before { content: ""; position: absolute; left: 14px; top:0; bottom:0; width: 2px; background: #ccc; pointer-events: none; }
+        /* El "grip" visual (botoncito en medio) */
         .resizer-h::after { 
             content: ""; display: block; width: 6px; height: 30px; 
             background: #e0e0e0; border: 1px solid #999; border-radius: 3px;
-            position: relative; z-index: 51;
+            position: relative; pointer-events: none;
         }
         
         .resizer-locked { cursor: default !important; opacity: 0.5; pointer-events: none; }
@@ -75,12 +86,28 @@
             width: 350px; min-width: 200px; 
             background: white; display: flex; flex-direction: column; height: 100%; 
             border-left: 1px solid #ccc;
+            z-index: 100; /* Menor que el resizer */
         }
 
         .ticket-lista { flex-grow: 1; overflow-y: auto; background: #fff; padding: 5px; touch-action: pan-y; }
         .area-totales { background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 15px; flex-shrink: 0; }
-        .btn-producto { height: 100px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.1s; position: relative; touch-action: manipulation; }
+        
+        /* BOTONES PRODUCTOS */
+        .btn-producto { 
+            height: 100px; 
+            width: 100%; /* Ocupa todo el espacio de su celda grid */
+            border-radius: 12px; 
+            border: 1px solid rgba(0,0,0,0.1); 
+            font-weight: bold; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            transition: transform 0.1s; 
+            position: relative; 
+            z-index: 1; /* Menor que el resizer (9999) */
+            touch-action: manipulation; 
+        }
         .btn-producto:active { transform: scale(0.95); }
+        .btn-producto span.small { font-size: 0.8rem; line-height: 1.1; text-align: center; margin-bottom: 4px; padding: 0 4px; }
 
         /* TECLADO FLOTANTE */
         #floating-keypad { 
@@ -172,7 +199,7 @@
                 <button class="pin-btn text-success" onclick="checkPin()"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
-        <p class="text-white-50 mt-4 small">v27.0 Full Height</p>
+        <p class="text-white-50 mt-4 small">v28.0 Smart Grid</p>
     </div>
 
     <div id="loader-overlay" style="display:none;">
@@ -261,7 +288,7 @@
         <div id="vista-pos" class="seccion-app seccion-activa">
             <div class="pos-split-container">
                 <div class="panel-productos" id="panel-productos">
-                    <div class="row g-2" id="grid-productos-pos"></div>
+                    <div id="grid-productos-pos"></div>
                 </div>
                 
                 <div class="resizer-h" id="resizer-h"></div>
@@ -500,7 +527,7 @@
             if(vista === 'diarias') window.cargarReporteDiario();
         };
 
-        // --- RESIZABLE LAYOUT (SOLO HORIZONTAL) ---
+        // --- RESIZABLE LAYOUT ---
         window.toggleLayoutLock = () => {
             window.isLayoutLocked = !window.isLayoutLocked;
             const btn = document.getElementById('btn-lock-layout');
@@ -616,18 +643,18 @@
         document.addEventListener('touchmove', (e) => { moveDragK(e); moveResizeK(e); }, {passive:false});
         document.addEventListener('mouseup', stopAllK); document.addEventListener('touchend', stopAllK);
 
-        // --- POS LÓGICA ---
+        // --- POS LÓGICA (MODIFICADO PARA CSS GRID) ---
         window.renderizarPOS = () => {
             const grid = document.getElementById('grid-productos-pos');
             if(!grid) return;
             grid.innerHTML = '';
             window.productos.forEach(p => {
-                grid.innerHTML += `<div class="col-4 col-lg-3">
+                // YA NO USAMOS COL-4, SOLO EL BOTÓN DIRECTO
+                grid.innerHTML += `
                     <button class="btn-producto" style="background-color:${p.color};color:${window.getContrastYIQ(p.color)}" onclick="agregar('${p.id}')">
                         <span class="small text-uppercase opacity-75">${p.nombre}</span>
                         <span class="fs-4 mb-0">$${p.precio}</span>
-                    </button>
-                </div>`;
+                    </button>`;
             });
         };
 
