@@ -228,6 +228,8 @@
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, writeBatch, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCtYiB82SKyGGbjeh8iZCzSefkC5H1_NTs",
             authDomain: "pdv-raspaditomx.firebaseapp.com",
@@ -472,3 +474,4 @@
     </script>
 </body>
 </html>
+
