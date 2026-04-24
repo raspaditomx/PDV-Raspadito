@@ -229,6 +229,26 @@
             </div>
         </div>
 
+        <div class="modal fade" id="modalNip" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center pb-4 pt-4">
+                    <i class="fa-solid fa-lock text-warning fa-3x mb-3"></i>
+                    <h6 class="fw-bold mb-2">NIP</h6>
+                    <p class="small text-muted mb-3">Ingresa el NIP.</p>
+                    
+                    <input type="password" class="form-control text-center fs-4 mb-3" id="nip-input" placeholder="••••" maxlength="4" style="letter-spacing: 5px;">
+                    <p class="text-danger small fw-bold mb-3" id="nip-error" style="display:none;">NIP Incorrecto</p>
+                    
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-light w-50" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-warning w-50 fw-bold" onclick="confirmarCerrarSesion()">Salir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        
         <div class="modal fade" id="modalCategoria" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-body">
             <input type="hidden" id="cat-id">
             <input type="hidden" id="cat-nombre-viejo">
@@ -445,9 +465,44 @@
             window.productos = []; window.ventas = [];
         }
 
+
+        // --- SISTEMA DE SEGURIDAD PARA CERRAR SESIÓN ---
+        const NIP_MAESTRO = "5253"; //
+
         window.cerrarSesion = () => {
-            window.carrito = []; window.montoRecibido = ""; window.actualizarTicket();
-            signOut(auth).then(() => { location.reload(); });
+            // Protección #1: Advertencia si no hay internet
+            if (!navigator.onLine) {
+                const advertencia = confirm("⚠️ ¡ALERTA DE DESCONEXIÓN! ⚠️\n\nEl sistema no tiene internet en este momento. Si cierras sesión AHORA, NO podrás volver a entrar al sistema hasta que regrese el internet.\n\n¿Estás absolutamente seguro de que quieres continuar?");
+                if (!advertencia) return; // Si le dan cancelar, se aborta
+            }
+
+            // Abrimos el modal y limpiamos intentos anteriores
+            document.getElementById('nip-input').value = '';
+            document.getElementById('nip-error').style.display = 'none';
+            const modalNip = new bootstrap.Modal(document.getElementById('modalNip'));
+            modalNip.show();
+        };
+
+        window.confirmarCerrarSesion = () => {
+            const nipIngresado = document.getElementById('nip-input').value;
+            
+            if (nipIngresado === NIP_MAESTRO) {
+                // NIP Correcto: Cerramos sesión
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNip'));
+                modal.hide();
+                
+                window.carrito = []; 
+                window.montoRecibido = ""; 
+                window.actualizarTicket(); 
+                
+                signOut(auth).then(() => { 
+                    location.reload(); 
+                });
+            } else {
+                // NIP Incorrecto: Mostramos error
+                document.getElementById('nip-error').style.display = 'block';
+                document.getElementById('nip-input').value = '';
+            }
         };
 
         function aplicarPermisos(role) {
