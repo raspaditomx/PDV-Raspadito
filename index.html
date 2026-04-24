@@ -159,9 +159,12 @@
             <i class="fa-solid fa-bars fa-lg"></i> <span class="ms-2 fw-bold">MENÚ</span>
         </button>
         <span class="text-white fw-bold small" id="titulo-vista">Punto de Venta</span>
-        <div class="ms-auto d-flex align-items-center">
-            <span id="role-badge" class="badge bg-danger me-2">...</span>
+           <div class="ms-auto d-flex align-items-center">
+            <span id="status-indicador" class="text-success fw-bold me-3" style="font-size: 0.7rem; opacity: 0.8; transition: all 0.3s;">
+                <i class="fa-solid fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin-bottom: 2px;"></i> Online
+            </span>
             
+            <span id="role-badge" class="badge bg-danger me-2">...</span>
         </div>
     </nav>
 
@@ -949,6 +952,26 @@
                 });
             });
         }
+        // --- DETECTOR DE CONEXIÓN ONLINE/OFFLINE ---
+        function actualizarEstadoRed() {
+            const indicador = document.getElementById('status-indicador');
+            if(!indicador) return;
+            
+            if (navigator.onLine) {
+                indicador.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin-bottom: 2px;"></i> Online';
+                indicador.className = 'text-success fw-bold me-3';
+            } else {
+                indicador.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 0.4rem; vertical-align: middle; margin-bottom: 2px;"></i> Offline';
+                indicador.className = 'text-warning fw-bold me-3'; // Usamos warning (amarillo) o danger (rojo)
+            }
+        }
+        
+        // Escuchamos si el internet se va o regresa
+        window.addEventListener('online', actualizarEstadoRed);
+        window.addEventListener('offline', actualizarEstadoRed);
+        
+        // Revisamos el estado la primera vez que carga la página
+        actualizarEstadoRed();
     </script>
 </body>
 </html>
