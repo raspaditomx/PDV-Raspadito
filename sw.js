@@ -1,29 +1,32 @@
-const CACHE_NAME = 'raspadito-v40-offline';
+const CACHE_NAME = 'raspadito-dinamico-v1';
 
-// Aquí le decimos qué archivos debe guardar en la memoria del celular/PC
-const urlsToCache = [
-  './',
-  './index.html',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js'
-];
-
-// Instalación: Descarga y guarda los archivos
+// 1. Se instala y se activa al instante sin esperar
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
-  );
+    self.skipWaiting(); 
 });
 
-// Intercepción: Cuando no hay internet, saca los archivos del caché
+self.addEventListener('activate', event => {
+    event.waitUntil(self.clients.claim()); 
+});
+
+// 2. Estrategia: Red primero, Caché como respaldo (Network First, fallback to Cache)
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      // Si el archivo está guardado, lo devuelve. Si no, intenta buscarlo en internet.
-      return response || fetch(event.request);
-    })
-  );
+    // Solo cacheamos las lecturas (GET). Ignoramos extensiones de Chrome o cosas raras.
+    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+
+    event.respondWith(
+        fetch(event.request)
+            .then(response => {
+                // SI HAY INTERNET: Descarga la info, clónala y guárdala en el caché automáticamente
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseClone);
+                });
+                return response;
+            })
+            .catch(() => {
+                // SI NO HAY INTERNET: Busca en el caché el archivo que se intentó descargar
+                return caches.match(event.request);
+            })
+    );
 });
