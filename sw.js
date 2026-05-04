@@ -1,4 +1,4 @@
-const CACHE_NAME = 'raspadito-dinamico-v2';
+const CACHE_NAME = 'raspadito-dinamico-v3';
 const TIEMPO_ESPERA_MAXIMO = 3000; // 3 segundos (3000 milisegundos)
 
 // 1. Instalación y activación rápida
